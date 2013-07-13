@@ -1,8 +1,5 @@
 from facepy import GraphAPI
-import sys
 import argparse
-import json
-import sqlite3
 import pickle
 
 LIMIT = 25
