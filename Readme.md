@@ -11,7 +11,7 @@ pip install facepy
 
 How to Use
 ----------
-Get an access token with `user_groups` permission from [here]("https://developers.facebook.com/tools/explorer")
+Get an access token with `user_groups` permission from [here](https://developers.facebook.com/tools/explorer)
 
 
 To view groups:
@@ -19,7 +19,7 @@ To view groups:
 python archiver.py <access-token>
 ```
 
-To archive a group, saving as a list of [post]("https://developers.facebook.com/docs/reference/api/post/") objects in a pickled file:
+To archive a group, saving as a list of [post](https://developers.facebook.com/docs/reference/api/post/) objects in a pickled file:
 ```
 python archiver.py -g <group-id> <access-token>
 ```
