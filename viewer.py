@@ -9,6 +9,7 @@ def open_group(group_id):
     for item in data:
         try:
             print item["message"][:70]
+            print item["id"]
         except:
             print "error"
             pass

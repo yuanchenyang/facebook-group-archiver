@@ -11,7 +11,7 @@ pip install facepy
 
 How to Use
 ----------
-Get an access token with `user_groups` permission from [here](https://developers.facebook.com/tools/explorer)
+Get an access token with `user_groups` permission from [here](https://developers.facebook.com/tools/explorer/)
 
 
 To view groups:
