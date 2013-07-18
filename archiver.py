@@ -2,8 +2,12 @@ from facepy import GraphAPI
 import argparse
 import pickle
 import sqlite3
+import sys
+import datetime
+import iso8601
 
-LIMIT = 25
+POST_LIMIT = 100
+COMMENT_LIMIT = 1000
 
 def get_date(*keys):
     def f(o):
@@ -46,7 +50,6 @@ POST_PARAMS = {'id': if_present('id'),
                'created_time': if_present('created_time'),
                'updated_time': if_present('updated_time'),
                'from_name': if_present('from', 'name'),
-               'search_string': lambda o: "Test",
                'to_name': lambda o: None,
                'message': if_present('message'), 
                'link': if_present('link'),
@@ -56,56 +59,119 @@ POST_PARAMS = {'id': if_present('id'),
                'source': if_present('source') ,
                'type': if_present('type')}
 
-def insert_post(post, conn):
+COMMENT_PARAMS = {'id': if_present('id'),
+                  'post_id': if_present('post_id'),
+                  'from_name': if_present('from', 'name'),
+                  'message': if_present('message'),
+                  'created_time': if_present('created_time')}
+
+def insert(obj, conn, params, kind):
+    post_id = if_present('id')(obj)
+    if kind == 'post' and post_exists(conn, post_id):
+        update_post(post_id, obj, conn)
+        return
+    
     result = {}
-    for key, fn in POST_PARAMS.items():
-        val = fn(post)
+    for key, fn in params.items():
+        val = fn(obj)
         if val:
             result[key] = val
-    insert_column("post", result, conn)
+    # Build searchable text
+    fts = {'body' : '', kind+'_id': result['id']}
+    for item in ['message', 'name', 'caption', 'description']:
+        if item in result:
+            fts['body'] += result[item]
+    if insert_row(kind, result, conn):
+        insert_row(kind+"_fts", fts, conn)
 
-def insert_column(table_name, key_val_map, conn):
+def update_post(post_id, obj, conn):
+    c = conn.cursor()
+    updated_time = if_present('updated_time')(obj)
+    assert updated_time is not None
+    try:
+        c.execute("UPDATE post SET updated_time=? WHERE id=?",
+                  (updated_time, post_id))
+    except Exception as e:
+        print >>sys.stderr, "Error updating post table: " + str(e)
+
+def post_exists(conn, post_id):
+    c = conn.cursor()
+    return c.execute("select count(1) from post where id=?",
+                     (post_id,)).fetchone()[0] == 1
+
+insert_comment = lambda comment, conn: insert(comment, conn,
+                                              COMMENT_PARAMS, "comment")
+insert_post = lambda post, conn: insert(post, conn, POST_PARAMS, "post")
+    
+def insert_row(table_name, key_val_map, conn):
     keys, vals = zip(*key_val_map.items())
     c = conn.cursor()
-    c.execute("INSERT INTO {} ({}) VALUES ({})".format(
-        table_name, ",".join(keys), ",".join(['?' for _ in keys])), vals)
+    try:
+        c.execute("INSERT INTO {} ({}) VALUES ({})".format(
+            table_name, ",".join(keys), ",".join(['?' for _ in keys])), vals)
+        return True
+    except sqlite3.IntegrityError as e:
+        if table_name != "comment": # temp hack as all comments will be inserted
+                                    # each time a post refreshes
+            print >>sys.stderr, "Error inserting {} into database: {}"\
+                       .format(str(key_val_map),str(e))
+        return False
 
-#testing
-def get_test_post():
-    import random
-    f = open('195621888632.dat', 'rb')
-    data = pickle.load(f)
-    return random.choice(data)
 
-def get_group(graph, group_id):
+def get_comments(graph, post_id, conn):
+    """WARNING: this function only gets one set of comments, up to
+    COMMENT_LIMIT. If the total number of comments is greater than
+    COMMENT_LIMIT, this will not get all the comments. This will be fixed when I
+    manage to figure out how to incrementally get all the comments, as
+    facebook's comments API is pretty screwed up right now.
+
+    """
+    if post_id is None:
+        return
+    response = graph.get("{}/comments?limit={}".format(post_id, COMMENT_LIMIT))
+    if 'data' in response and response['data']:
+        for obj in response['data']:
+            obj['post_id'] = post_id
+            insert_comment(obj, conn)
+        
+def get_group_posts(graph, group_id):
     db_name = str(group_id) + ".db"
     try:
         with open(db_name): pass
     except IOError:
         create_new_db(db_name)
     conn = sqlite3.connect(db_name)
-
-    response = graph.get("{0}/feed?limit={1}".format(group_id, LIMIT))
-    total = 0
-    while len(response["data"]) > 0:
-        total += len(response['data'])
-        map(lambda o: insert_post(o, conn), response['data'])
-        
-        newUrl = response["paging"]["next"].replace(
-            "https://graph.facebook.com/", "")
-        response = graph.get(newUrl)
-        print "Getting posts, total {0}".format(total)
-
-    # filename = "{0}.dat".format(group_id)
-    # output = open(filename, "wb")
-    # pickle.dump(data, output)
-    # output.close()
-
+    c = conn.cursor()
+    latest_time_str = c.execute("SELECT MAX(updated_time) FROM post;").fetchone()[0]
+    if latest_time_str is None:
+        latest_datetime = None
+    else:
+        latest_datetime = iso8601.parse_date(latest_time_str)
+    def get_posts():
+        response = graph.get("{0}/feed?limit={1}".format(group_id, POST_LIMIT))
+        total = 0
+        while 'data' in response and response['data'] and \
+              len(response["data"]) > 0:
+            for obj in response['data']:
+                time = iso8601.parse_date(if_present('updated_time')(obj))
+                if latest_datetime and time <= latest_datetime:
+                    return total
+                insert_post(obj, conn)
+                get_comments(graph, if_present('id')(obj), conn)
+                total += 1
+                    
+            print "Getting posts, total {0}".format(total)
+            conn.commit()
+            newUrl = response["paging"]["next"].replace(
+                "https://graph.facebook.com/", "")
+            response = graph.get(newUrl)
+            return total
+    print "Inserted total {0}".format(get_posts())
     conn.commit()
     conn.close()
     print "Saved in database: " + db_name
-        
-if __name__ == '__main__':
+
+def main():
     parser = argparse.ArgumentParser(description='Downloads a facebook group')
     parser.add_argument('access_token', action="store")
     parser.add_argument('--group', '-g', metavar="group_id", action="store",
@@ -118,4 +184,7 @@ if __name__ == '__main__':
     if not args.group:
         print_groups(graph)
     else:
-        get_group(graph, args.group)
+        get_group_posts(graph, args.group)
+        
+if __name__ == '__main__':
+    main()

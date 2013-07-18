@@ -1,10 +1,8 @@
-
 CREATE TABLE post (
   id TEXT PRIMARY KEY UNIQUE,
   created_time DATETIME NOT NULL,
   updated_time DATETIME NOT NULL,
   from_name TEXT NOT NULL,
-  search_string NOT NULL,
   to_name TEXT DEFAULT NULL,
   message TEXT DEFAULT NULL,
   link TEXT DEFAULT NULL,
@@ -17,8 +15,19 @@ CREATE TABLE post (
 
 CREATE TABLE comment (
   id TEXT PRIMARY KEY UNIQUE,
-  post_id TEXT REFERENCES post(id) NOT NULL,
+  post_id TEXT NOT NULL,
   from_name TEXT NOT NULL,
   message TEXT NOT NULL,
-  created_time DATETIME NOT NULL
+  created_time DATETIME NOT NULL,
+  FOREIGN KEY(post_id) REFERENCES post(id)
+);
+
+CREATE VIRTUAL TABLE post_fts USING fts3(
+  post_id TEXT UNIQUE NOT NULL REFERENCES post(id),
+  body TEXT DEFAULT NULL
+);
+
+CREATE VIRTUAL TABLE comment_fts USING fts3(
+  comment_id TEXT UNIQUE NOT NULL REFERENCES comment(id),
+  body TEXT DEFAULT NULL
 );
