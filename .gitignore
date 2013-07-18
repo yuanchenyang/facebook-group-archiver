@@ -10,8 +10,11 @@ __pycache__
 *.lock
 *.DS_Store
 *.swp
+*.log
 *.out
 
 # Project specific
 *.dat
 *.db
+run-cron
+run.sh
