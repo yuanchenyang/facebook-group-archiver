@@ -80,7 +80,7 @@ def insert(obj, conn, params, kind):
     fts = {'body' : '', kind+'_id': result['id']}
     for item in ['message', 'name', 'caption', 'description']:
         if item in result:
-            fts['body'] += result[item]
+            fts['body'] += result[item] + " "
     if insert_row(kind, result, conn):
         insert_row(kind+"_fts", fts, conn)
 
@@ -165,7 +165,7 @@ def get_group_posts(graph, group_id):
             newUrl = response["paging"]["next"].replace(
                 "https://graph.facebook.com/", "")
             response = graph.get(newUrl)
-            return total
+        return total
     print "Inserted total {0}".format(get_posts())
     conn.commit()
     conn.close()
