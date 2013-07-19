@@ -2,14 +2,15 @@ from facepy import GraphAPI
 import argparse
 import pickle
 import sqlite3
-import sys
+import sys, os
 import datetime
 import iso8601
 
 POST_LIMIT = 100
 COMMENT_LIMIT = 1000
 
-DATABASE_DIR = "./databases/"
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+DATABASE_DIR = BASE_PATH + "/databases"
 
 def get_date(*keys):
     def f(o):
@@ -40,7 +41,7 @@ def print_groups(graph):
         raise ValueError("Invalid response: " + groups)
 
 def create_new_db(db_name):
-    f = open("bootstrap.sql", 'r')
+    f = open(BASE_PATH + "/bootstrap.sql", 'r')
     init = f.read()
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
@@ -136,16 +137,25 @@ def get_comments(graph, post_id, conn):
             obj['post_id'] = post_id
             insert_comment(obj, conn)
         
-def get_group_posts(graph, group_id):
-    db_name = DATABASE_DIR + str(group_id) + ".db"
+def get_group_posts(graph, group_id, update):
+    # Make databases directory if not present
+    try:
+        with open(DATABASE_DIR): pass
+    except IOError:
+        os.mkdir(DATABASE_DIR)
+    db_name = DATABASE_DIR + "/" + str(group_id) + ".db"
+    # Make <group_id>.db file if not present
     try:
         with open(db_name): pass
     except IOError:
         create_new_db(db_name)
+    return
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
+    
     latest_time_str = c.execute("SELECT MAX(updated_time) FROM post;").fetchone()[0]
     if latest_time_str is None:
+        # Database is empty
         latest_datetime = None
     else:
         latest_datetime = iso8601.parse_date(latest_time_str)
@@ -175,18 +185,20 @@ def get_group_posts(graph, group_id):
 
 def main():
     parser = argparse.ArgumentParser(description='Downloads a facebook group')
-    parser.add_argument('access_token', action="store")
-    parser.add_argument('--group', '-g', metavar="group_id", action="store",
-                        type=int)
-    parser.add_argument('--opengroup', '-o', metavar="group_id", action="store",
-                        type=int)
+    parser.add_argument('access_token', action="store",
+                        help="Token from facebook authentication")
+    parser.add_argument('-u', '--update', action="store_true",
+                        help="Updates all the posts of a group, if a group_id "+
+                             "is provided")
+    parser.add_argument('-g', '--group', metavar="group_id", action="store",
+                        type=int, help="Archive a group")
     args = parser.parse_args()
     graph = GraphAPI(args.access_token)
     
     if not args.group:
         print_groups(graph)
     else:
-        get_group_posts(graph, args.group)
+        get_group_posts(graph, args.group, args.update)
         
 if __name__ == '__main__':
     main()
