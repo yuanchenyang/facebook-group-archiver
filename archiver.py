@@ -9,6 +9,8 @@ import iso8601
 POST_LIMIT = 100
 COMMENT_LIMIT = 1000
 
+DATABASE_DIR = "./databases/"
+
 def get_date(*keys):
     def f(o):
         date = if_present(*keys)(o)
@@ -135,7 +137,7 @@ def get_comments(graph, post_id, conn):
             insert_comment(obj, conn)
         
 def get_group_posts(graph, group_id):
-    db_name = str(group_id) + ".db"
+    db_name = DATABASE_DIR + str(group_id) + ".db"
     try:
         with open(db_name): pass
     except IOError:
