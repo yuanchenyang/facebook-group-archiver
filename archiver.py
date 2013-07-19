@@ -68,26 +68,36 @@ COMMENT_PARAMS = {'id': if_present('id'),
                   'message': if_present('message'),
                   'created_time': if_present('created_time')}
 
-def insert(obj, conn, params, kind):
-    post_id = if_present('id')(obj)
-    if kind == 'post' and post_exists(conn, post_id):
-        update_post(post_id, obj, conn)
-        return
-    
+def build_result(obj, params):
     result = {}
     for key, fn in params.items():
         val = fn(obj)
         if val:
             result[key] = val
+    return result
+
+def build_fts(result, kind):
     # Build searchable text
     fts = {'body' : '', kind+'_id': result['id']}
     for item in ['message', 'name', 'caption', 'description']:
         if item in result:
             fts['body'] += result[item] + " "
-    if insert_row(kind, result, conn):
-        insert_row(kind+"_fts", fts, conn)
+    return fts
 
-def update_post(post_id, obj, conn):
+def insert(conn, obj, params, kind):
+    item_id = if_present('id')(obj)
+    if exists(conn, item_id, kind):
+        if kind == 'post':
+            update_post(conn, obj, item_id)
+            return
+        elif kind == 'comment':
+            return
+
+    result = build_result(obj, params)
+    if insert_row(conn, kind, result):
+        insert_row(conn, kind+"_fts", build_fts(result, kind))
+
+def update_post(conn, obj, post_id):
     c = conn.cursor()
     updated_time = if_present('updated_time')(obj)
     assert updated_time is not None
@@ -97,31 +107,28 @@ def update_post(post_id, obj, conn):
     except Exception as e:
         print >>sys.stderr, "Error updating post table: " + str(e)
 
-def post_exists(conn, post_id):
+def exists(conn, item_id, table_name):
     c = conn.cursor()
-    return c.execute("select count(1) from post where id=?",
-                     (post_id,)).fetchone()[0] == 1
+    return c.execute("select count(1) from {} where id=?".format(table_name),
+                     (item_id,)).fetchone()[0] == 1
 
-insert_comment = lambda comment, conn: insert(comment, conn,
+insert_comment = lambda comment, conn: insert(conn, comment,
                                               COMMENT_PARAMS, "comment")
-insert_post = lambda post, conn: insert(post, conn, POST_PARAMS, "post")
+insert_post = lambda post, conn: insert(conn, post, POST_PARAMS, "post")
     
-def insert_row(table_name, key_val_map, conn):
+def insert_row(conn, table_name, key_val_map, update=False):
     keys, vals = zip(*key_val_map.items())
     c = conn.cursor()
     try:
         c.execute("INSERT INTO {} ({}) VALUES ({})".format(
             table_name, ",".join(keys), ",".join(['?' for _ in keys])), vals)
         return True
-    except sqlite3.IntegrityError as e:
-        if table_name != "comment": # temp hack as all comments will be inserted
-                                    # each time a post refreshes
-            print >>sys.stderr, "Error inserting {} into database: {}"\
-                       .format(str(key_val_map),str(e))
+    except Exception as e:
+        print >>sys.stderr, "Error inserting {} into table {}: {}"\
+                   .format(str(key_val_map), table_name, str(e))
         return False
 
-
-def get_comments(graph, post_id, conn):
+def get_comments(conn, graph, post_id):
     """WARNING: this function only gets one set of comments, up to
     COMMENT_LIMIT. If the total number of comments is greater than
     COMMENT_LIMIT, this will not get all the comments. This will be fixed when I
@@ -139,9 +146,7 @@ def get_comments(graph, post_id, conn):
         
 def get_group_posts(graph, group_id, update):
     # Make databases directory if not present
-    try:
-        with open(DATABASE_DIR): pass
-    except IOError:
+    if not os.path.isdir(DATABASE_DIR):
         os.mkdir(DATABASE_DIR)
     db_name = DATABASE_DIR + "/" + str(group_id) + ".db"
     # Make <group_id>.db file if not present
@@ -149,7 +154,7 @@ def get_group_posts(graph, group_id, update):
         with open(db_name): pass
     except IOError:
         create_new_db(db_name)
-    return
+
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
     
@@ -165,13 +170,16 @@ def get_group_posts(graph, group_id, update):
         while 'data' in response and response['data'] and \
               len(response["data"]) > 0:
             for obj in response['data']:
-                time = iso8601.parse_date(if_present('updated_time')(obj))
-                if latest_datetime and time <= latest_datetime:
-                    return total
-                insert_post(obj, conn)
-                get_comments(graph, if_present('id')(obj), conn)
+                if update:
+                    pass
+                else:
+                    time = iso8601.parse_date(if_present('updated_time')(obj))
+                    print time, latest_datetime
+                    if latest_datetime and time <= latest_datetime:
+                        return total
+                    insert_post(obj, conn)
+                    get_comments(conn, graph, if_present('id')(obj))
                 total += 1
-                    
             print "Getting posts, total {0}".format(total)
             conn.commit()
             newUrl = response["paging"]["next"].replace(
