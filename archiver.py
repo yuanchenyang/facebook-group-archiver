@@ -174,7 +174,6 @@ def get_group_posts(graph, group_id, update):
                     pass
                 else:
                     time = iso8601.parse_date(if_present('updated_time')(obj))
-                    print time, latest_datetime
                     if latest_datetime and time <= latest_datetime:
                         return total
                     insert_post(obj, conn)
