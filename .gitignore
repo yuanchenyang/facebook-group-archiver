@@ -18,3 +18,4 @@ __pycache__
 *.db
 run-cron
 run.sh
+logs/
