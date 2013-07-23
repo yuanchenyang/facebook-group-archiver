@@ -31,13 +31,19 @@ class FBObject(object):
     def check_equals(self, conn):
         conn.row_factory = sqlite3.Row
         c = conn.cursor();
-        query = "SELECT * FROM {} WHERE id={}".format(self.table, self.id)
-        c.execute(query)
+        select_query = "SELECT * FROM {} WHERE id={}".format(self.table, self.id)
+        fts_query = 'SELECT * FROM {0}_fts WHERE {0}_id = "{1}"'\
+                    .format(self.table, self.id)
+        c.execute(select_query)
         row = c.fetchone()
         for field in self.fields:
             assert field in row.keys(), "Not in selected row: " + field
             assert row[field] == getattr(self, field), \
                 "{} is not synced for: {}".format(field, str(self))
+        c.execute(fts_query)
+        fts_body = c.fetchone()["body"]
+        assert self.message in fts_body, "Message not in fts table: {} " +\
+            "\n---------------\n{}".format(message, fts_body)
 
     def __str__(self):
         s = {}
@@ -130,6 +136,16 @@ class Graph(object):
     def add_comment(self, post_id, message, day, from_name="Test Name"):
         self.assert_day(day)
         self.posts[post_id]._add_comment(message, day, from_name)
+
+    def update(self, name, val, post_id, comment_id=None):
+        """silently updates without setting updated time"""
+        post = self.posts[post_id]
+        if comment_id:
+            for comment in post.comments:
+                if comment.id == comment_id:
+                    setattr(comment, name, val)
+        else:
+            setattr(post, name, val)
     
     def get(self, endpoint):
         path, query = endpoint.split('?')
@@ -219,22 +235,70 @@ class ArchiverTest(BaseTest):
         conn.close()
         return result
 
+    def ggp(self, *args, **kwargs):
+        archiver.get_group_posts(self.graph, TEST_DB, *args, **kwargs)
+
     def test_get_posts(self):
-        archiver.get_group_posts(self.graph, TEST_DB, False)
+        self.ggp()
         self.check_graph()
 
     def test_get_new_post(self):
-        archiver.get_group_posts(self.graph, TEST_DB, False)
+        self.ggp()
         self.graph.insert_post(Post("p3", 5))
-        archiver.get_group_posts(self.graph, TEST_DB, False)
+        self.ggp()
         self.check_graph()
 
     def test_get_new_comment(self):
-        archiver.get_group_posts(self.graph, TEST_DB, False)
+        self.ggp()
         self.graph.add_comment(self.p1.id, "c3", 5)
-        archiver.get_group_posts(self.graph, TEST_DB, False)
+        self.ggp()
         self.check_graph()
 
+    def test_get_new_post_and_comment(self):
+        self.ggp()
+        p = Post("p4", 5)
+        self.graph.insert_post(p)
+        self.graph.add_comment(p.id, "c4", 6)
+        self.ggp()
+        self.check_graph()
+
+    def test_get_multiple_posts(self):
+        archiver.POST_LIMIT = 100
+        self.ggp()
+        self.check_graph()
+        
+    def test_update_and_insert(self):
+        self.ggp()
+        p = Post("p4", 5)
+        self.graph.insert_post(p)
+        self.graph.add_comment(p.id, "c4", 6)
+        self.graph.add_comment(self.p1.id, "c5", 7)
+        self.ggp()
+        self.check_graph()
+
+    def test_update_post_time(self):
+        self.ggp()
+        self.graph.update("updated_time", dt(5), self.p1.id)
+        self.ggp()
+        self.check_graph()
+        
+    def test_update_all(self):
+        self.ggp()
+        self.graph.update("from_name", "Me!", self.p1.id)
+        self.graph.update("from_name", "You!", self.p2.id)
+        self.ggp(update_posts=True)
+        self.check_graph()
+
+    def test_update_all_and_insert(self):
+        self.ggp()
+        p = Post("p4", 5)
+        self.graph.insert_post(p)
+        self.graph.add_comment(p.id, "c4", 6)
+        self.graph.update("from_name", "Me!", self.p1.id)
+        self.ggp(update_posts=True)
+        self.check_graph()
+
+
 if __name__ == '__main__':
-    unittest.main(verbosity=2, exit=False, buffer=True)
+    unittest.main(verbosity=2, exit=False, buffer=False)
     

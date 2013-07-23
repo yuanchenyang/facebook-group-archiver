@@ -68,6 +68,8 @@ COMMENT_PARAMS = {'id': if_present('id'),
                   'message': if_present('message'),
                   'created_time': if_present('created_time')}
 
+UPDATE_EXCLUDED = {'id', 'created_time', 'message'}
+
 def build_result(obj, params):
     result = {}
     for key, fn in params.items():
@@ -86,24 +88,17 @@ def build_fts(result, kind):
 
 def insert(conn, obj, params, kind):
     item_id = if_present('id')(obj)
-    if exists(conn, item_id, kind):
-        if kind == 'post':
-            update_post(conn, obj, item_id)
-            return
-        elif kind == 'comment':
-            return
-
     result = build_result(obj, params)
     if insert_row(conn, kind, result):
         insert_row(conn, kind+"_fts", build_fts(result, kind))
 
-def update_post(conn, obj, post_id):
+def update(conn, update_dict, obj_id, table_name):
     c = conn.cursor()
-    updated_time = if_present('updated_time')(obj)
-    assert updated_time is not None
+    keys, vals = zip(*update_dict.items())
+    query = "UPDATE {} SET {} WHERE id=?"\
+        .format(table_name, ",".join(k + "=?" for k in keys))
     try:
-        c.execute("UPDATE post SET updated_time=? WHERE id=?",
-                  (updated_time, post_id))
+        c.execute(query, vals + (obj_id,))
     except Exception as e:
         print >>sys.stderr, "Error updating post table: " + str(e)
 
@@ -139,12 +134,17 @@ def get_comments(conn, graph, post_id):
     if post_id is None:
         return
     response = graph.get("{}/comments?limit={}".format(post_id, COMMENT_LIMIT))
+    comments = 0
     if 'data' in response and response['data']:
-        for obj in response['data']:
-            obj['post_id'] = post_id
-            insert_comment(obj, conn)
+        for comment in response['data']:
+            comment_id = if_present('id')(comment)
+            if not exists(conn, comment_id, "comment"):
+                comment['post_id'] = post_id
+                insert_comment(comment, conn)
+                comments += 1
+    return comments
         
-def get_group_posts(graph, group_id, update):
+def get_group_posts(graph, group_id, update_posts=False):
     # Make databases directory if not present
     if not os.path.isdir(DATABASE_DIR):
         os.mkdir(DATABASE_DIR)
@@ -164,28 +164,53 @@ def get_group_posts(graph, group_id, update):
         latest_datetime = None
     else:
         latest_datetime = iso8601.parse_date(latest_time_str)
+
     def get_posts():
         response = graph.get("{0}/feed?limit={1}".format(group_id, POST_LIMIT))
-        total = 0
+        posts_new = 0
+        posts_updated = 0
+        comments = 0
+        
         while 'data' in response and response['data'] and \
               len(response["data"]) > 0:
-            for obj in response['data']:
-                if update:
-                    pass
+            for post in response['data']:
+                post_id = if_present('id')(post)
+                time = iso8601.parse_date(if_present('updated_time')(post))
+                if latest_datetime and time <= latest_datetime and\
+                   not update_posts:
+                    return posts_new, comments, posts_updated
+                    
+                if exists(conn, post_id, "post"):
+                    update_dict = {}
+                    if update_posts:
+                        # Update everything in post, not comments
+                        for key, val in build_result(post, POST_PARAMS).items():
+                            if key not in UPDATE_EXCLUDED:
+                                update_dict[key] = val
+                    else:
+                        # Update "updated_time" and adds new comments
+                        updated_time = if_present('updated_time')(post)
+                        assert updated_time is not None
+                        update_dict["updated_time"] = updated_time
+                        comments += get_comments(conn, graph, post_id)
+                        
+                    update(conn, update_dict, post_id, "post")
+                    posts_updated += 1
                 else:
-                    time = iso8601.parse_date(if_present('updated_time')(obj))
-                    if latest_datetime and time <= latest_datetime:
-                        return total
-                    insert_post(obj, conn)
-                    get_comments(conn, graph, if_present('id')(obj))
-                total += 1
-            print "Getting posts, total {0}".format(total)
+                    # Insert new post and its comments
+                    insert_post(post, conn)
+                    comments += get_comments(conn, graph, post_id)
+                    posts_new += 1
+                        
+            print "Getting posts, total {0}".format(posts_new + posts_updated)
             conn.commit()
             newUrl = response["paging"]["next"].replace(
                 "https://graph.facebook.com/", "")
             response = graph.get(newUrl)
-        return total
-    print "Inserted total {0}".format(get_posts())
+        return posts_new, comments, posts_updated
+        
+    print "Inserted {} post(s), {} comment(s). Updated {} post(s)"\
+        .format(*get_posts())
     conn.commit()
     conn.close()
     print "Saved in database: " + db_name
@@ -205,7 +230,7 @@ def main():
     if not args.group:
         print_groups(graph)
     else:
-        get_group_posts(graph, args.group, args.update)
+        get_group_posts(graph, args.group, update_posts=args.update)
         
 if __name__ == '__main__':
     main()
