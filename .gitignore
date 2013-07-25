@@ -17,5 +17,4 @@ __pycache__
 *.dat
 *.db
 run-cron
-run.sh
-logs/
+/conf.sh
