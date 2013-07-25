@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title%}Facebook Group Viewer{% endblock %}</title>
+    <link href="/static/css/bootstrap-2.3.1.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/css/font-awesome.css">
+    <style> body { padding-top: 90px; } </style> <!-- Bootstrap -->
+    <link href="/static/css/main.css" rel="stylesheet" />
+    {% block style_block %}{# page-specific CSS #}{% endblock %}
+    <script src="/static/js/modernizr-2.6.2.js"></script>
+    {# Modernizr must be here, above body tag. #}
+    {% block head_script %}{# defer-incapable JS block #}{% endblock %}
+</head>
+<body>
+    <div id="header">
+        {% include 'nav.html' %} {# pull in navbar #}
+    </div>
+    <div class="container" id="maincontent">
+        {% include 'flash_message.html' %} {# page-level feedback notices #}
+        <div id="body_content">
+            {% block content %}{# main content area #}{% endblock %}
+        </div>
+    </div><!-- /container -->
+    <footer>
+        <div id="footer" class="container">
+            {% block footer %}{% endblock %}
+        </div><!-- /footer -->
+    </footer>
+    <script src=""></script>
+    <script src="/static/js/jquery-1.10.2.js"></script>
+    <script src="/static/js/bootstrap-2.3.1.js"></script>
+    {% block tail_script %}{# defer-capable JS block #}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,41 @@
+<ul class="pager">
+  <li class="previous">
+    <button class="btn clickable btn-previous">&larr; Previous</button>
+  </li>
+  <li>
+    {{ offset + 1 }} to {{ offset + limit }}
+  </li>
+  <li class="clickable next">
+    <button class="btn clickable btn-next">Next &rarr;</button>
+  </li>
+</ul>
+
+{% for result in results %}
+<div class="row-fluid result">
+  <h4>{{ result["from_name"] }}</h4>
+</div>
+<div class="row-fluid">
+  <small> {{ result["created_time"] }} </small>
+</div>
+<div class="row-fluid">
+  {% set id = result["id"] %}
+  <a href="https://www.facebook.com/{{ id }}">{{ id }}</a>
+</div>
+<div class="row-fluid">
+  {{ result["snippet(" + where + "_fts)"] | safe}}
+</div>
+{% endfor %}
+
+{% if results_length > 5 %}
+<ul class="pager">
+  <li class="previous">
+    <button class="btn clickable btn-previous">&larr; Previous</button>
+  </li>
+  <li>
+    {{ offset + 1 }} to {{ offset + limit }}
+  </li>
+  <li class="clickable next">
+    <button class="btn clickable btn-next">Next &rarr;</button>
+  </li>
+</ul>
+{% endif %}

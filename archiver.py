@@ -143,12 +143,15 @@ def get_comments(conn, graph, post_id):
                 insert_comment(comment, conn)
                 comments += 1
     return comments
+
+def get_db_name(group_id):
+     return DATABASE_DIR + "/" + str(group_id) + ".db"
         
 def get_group_posts(graph, group_id, update_posts=False):
     # Make databases directory if not present
     if not os.path.isdir(DATABASE_DIR):
         os.mkdir(DATABASE_DIR)
-    db_name = DATABASE_DIR + "/" + str(group_id) + ".db"
+    db_name = get_db_name(group_id)
     # Make <group_id>.db file if not present
     try:
         with open(db_name): pass
