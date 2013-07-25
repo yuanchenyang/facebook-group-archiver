@@ -75,9 +75,13 @@ def main():
     global GROUP_ID
     parser = argparse.ArgumentParser(description='Opens a saved group')
     parser.add_argument('group_id', action="store")
+    parser.add_argument('-p', '--production', action="store_true")
     args = parser.parse_args()
     GROUP_ID = args.group_id
-    app.run(host="0.0.0.0", port=80)
+    if args.production:
+        app.run(host="0.0.0.0", port=80)
+    else:
+        app.run(debug=True)
 
 if __name__ == '__main__':
     main()
