@@ -77,7 +77,7 @@ def main():
     parser.add_argument('group_id', action="store")
     args = parser.parse_args()
     GROUP_ID = args.group_id
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=80)
 
 if __name__ == '__main__':
     main()
