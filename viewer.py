@@ -10,9 +10,7 @@ from flask import Flask, request, render_template, flash, url_for, redirect
 
 try :
     import apsw
-    APSW = True
-except:    
-    APSW = False
+except: pass
 
 app = Flask(__name__)
 
@@ -90,7 +88,7 @@ def get_conn(group_id, readonly=False):
     except IOError:
         raise NameError("Database not found: " + db_path)
 
-    if readonly and APSW:
+    if readonly and apsw:
         def row_trace(cursor, row):
             names = (l[0] for l in cursor.getdescription())
             return dict(zip(names, row))
@@ -133,7 +131,7 @@ def main():
     args = parser.parse_args()
     GROUP_ID = args.group_id
     if args.production:
-        if not APSW:
+        if not apsw:
             raise ViewerError("Viewer must use apsw for database connections " +
                               "during production mode")
         app.run(host="0.0.0.0", port=80)
