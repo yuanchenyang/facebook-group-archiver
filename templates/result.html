@@ -1,0 +1,28 @@
+<ul class="pager">
+  <li class="previous">
+    <button class="btn clickable btn-previous">&larr; Previous</button>
+  </li>
+  <li>
+    {{ offset + 1 }} to {{ offset + limit }}
+  </li>
+  <li class="clickable next">
+    <button class="btn clickable btn-next">Next &rarr;</button>
+  </li>
+</ul>
+
+{% block result_body %}
+{% endblock %}
+
+{% if results_length > 5 %}
+<ul class="pager">
+  <li class="previous">
+    <button class="btn clickable btn-previous">&larr; Previous</button>
+  </li>
+  <li>
+    {{ offset + 1 }} to {{ offset + limit }}
+  </li>
+  <li class="clickable next">
+    <button class="btn clickable btn-next">Next &rarr;</button>
+  </li>
+</ul>
+{% endif %}

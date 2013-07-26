@@ -1,0 +1,23 @@
+{% extends "main.html" %}
+
+{% block search_bar %}
+<div class="row-fluid">
+  <div class="input-prepend input-append span8">
+    <div class="btn-group">
+      <button class="btn dropdown-toggle" data-toggle="dropdown">
+        Examples
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" id="example-dropdown">
+      </ul>
+    </div>
+    <input class="input-block-level" id="search-field" type="text"
+           placeholder="Type in SQL Query here, without limits">
+    <button class="btn clickable" type="submit" id="query">Query</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block additional_tail_script %}
+<script src="/static/js/sql.js"></script>
+{% endblock %}

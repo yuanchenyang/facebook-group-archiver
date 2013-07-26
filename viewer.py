@@ -2,10 +2,18 @@ import pickle
 import sys
 import argparse
 import archiver
-import sqlite3
 import json
+import sqlite3
 
+from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
+
+try :
+    import apsw
+    APSW = True
+except:    
+    APSW = False
+
 app = Flask(__name__)
 
 MAX_LIMIT = 50
@@ -17,18 +25,50 @@ def main_page():
 
 @app.route("/search/posts")
 def search_posts():
-    return search_web("post")
+    conn = get_conn(GROUP_ID)
+    return query(search_web, conn, "post")
 
 @app.route("/search/comments")
 def search_comments():
-    return search_web("comment")
-
-def search_web(where):
     conn = get_conn(GROUP_ID)
+    return query(search_web, conn, "comment")
+
+@app.route("/query")
+def query_web():
+    conn = get_conn(GROUP_ID, readonly=True)
+    return query(safe_query, conn)
+
+@app.route("/sql")
+def sql_page():
+    return render_template("sql.html")
+
+@app.route("/stats")
+def stats():
+    conn = get_conn(GROUP_ID)
+    return render_template("stats.html")
+
+def query(fn, conn, *args):    
     a = request.args
     limit = int(a.get("limit", 10))
     offset = int(a.get("offset", 0))
-    results = search(where, conn, a.get("query"), limit, offset)
+    query = a.get("query")
+    return fn(conn, query, limit, offset, *args)
+
+def safe_query(conn, query, limit, offset):
+    if limit > MAX_LIMIT :
+        raise ViewerError("Limit exceeds MAX_LIMIT = " + str(MAX_LIMIT))
+    try:
+        results = sql_query(conn, query + " LIMIT ? OFFSET ?", limit, offset)
+        return render_template("sql_result.html", results=results,
+                               results_length=len(results), limit=limit,
+                               offset=offset)
+    except Exception as e:
+        sql_str = query + " LIMIT {} OFFSET {}".format(limit, offset)
+        return render_template("error.html", sql=sql_str, e=str(e))
+    
+
+def search_web(conn, query, limit, offset, where):
+    results = search(where, conn, query, limit, offset)
     conn.close()
     return render_template("search_result.html", results=results, where=where,
                            limit=limit, offset=offset,
@@ -43,15 +83,22 @@ def jsonize(fn):
 def curry(fn, *args):
     return lambda *more_args: fn(*(args + more_args))
 
-def get_conn(group_id):
+def get_conn(group_id, readonly=False):
     db_path = archiver.get_db_name(group_id)
     try:
         with open(db_path): pass
     except IOError:
         raise NameError("Database not found: " + db_path)
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
+    if readonly and APSW:
+        def row_trace(cursor, row):
+            names = (l[0] for l in cursor.getdescription())
+            return dict(zip(names, row))
+        conn = apsw.Connection(db_path, flags=1) # SQLITE Read-Only flag
+        conn.setrowtrace(row_trace)
+    else:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
     return conn
 
 def search(where, conn, search_string, limit=25, offset=0):
@@ -62,14 +109,21 @@ def search(where, conn, search_string, limit=25, offset=0):
     sql = """SELECT {0} FROM {1}_fts JOIN {1} ON {1}_id={1}.id
              WHERE {1}_fts MATCH ? LIMIT ? OFFSET ?""".format(
                  ",".join(select_fields), where)
-    return query(conn, sql, search_string, limit, offset)
+    return sql_query(conn, sql, search_string, limit, offset)
 
 sp = jsonize(curry(search, "post"))
 sc = jsonize(curry(search, "comment"))
     
-def query(conn, sql, *args):
-    rows = conn.execute(sql, args).fetchall()
-    return [{key: row[key] for key in row.keys()} for row in rows]
+def sql_query(conn, sql, *args):
+    cur = conn.cursor()
+    rows = cur.execute(sql, args).fetchall()
+    ret_rows = []
+    for row in rows:
+        d = OrderedDict()
+        for key in row.keys():
+            d[key] = row[key]
+        ret_rows.append(d)
+    return ret_rows
 
 def main():
     global GROUP_ID
@@ -79,6 +133,9 @@ def main():
     args = parser.parse_args()
     GROUP_ID = args.group_id
     if args.production:
+        if not APSW:
+            raise ViewerError("Viewer must use apsw for database connections " +
+                              "during production mode")
         app.run(host="0.0.0.0", port=80)
     else:
         app.run(debug=True)

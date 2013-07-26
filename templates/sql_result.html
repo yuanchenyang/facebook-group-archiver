@@ -1,0 +1,12 @@
+{% extends "result.html" %}
+
+{% block result_body %}
+{% for result in results %}
+<dl class="dl-horizontal result">
+  {% for key, value in result.items() %}
+  <dt> {{ key }} </dt>
+  <dd> {{ value }} </dd>
+  {% endfor %}
+</dl>
+{% endfor %}
+{% endblock %}

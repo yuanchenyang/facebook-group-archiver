@@ -1,22 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="input-append">
-  <input class="input-xxlarge" id="search-field" type="text" placeholder="Search">
-  <button class="btn clickable" type="submit" id="search-posts">Posts</button>
-  <button class="btn clickable" type="submit" id="search-comments">Comments</button>
+{% block search_bar %}
+<div class="row-fluid">
+  <div class="span2"></div>
+  <div class="input-append span6">
+    <input class="input-block-level" id="search-field" type="text" placeholder="Search">
+    <button class="btn clickable" type="submit" id="search-posts">Posts</button>
+    <button class="btn clickable" type="submit" id="search-comments">Comments</button>
+  </div>
 </div>
+{% endblock %}
 
 <div class="row-fluid">
-  <div class="span8" id="search-result">
+  <div class="span10" id="search-result">
   </div>
 </div>
 {% endblock %}
 
 {% block tail_script %}
 <script src="/static/js/main.js"></script>
+{% block additional_tail_script %}
+{% endblock %}
 {% endblock %}
 
 {% block footer %}
-<div>&nbsp;</div>
+<div><p></p></div>
 {% endblock %}
