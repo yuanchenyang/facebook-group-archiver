@@ -7,7 +7,13 @@ var examples = {"Posts by most recent":
                 "SELECT count(1) from post",
                 "Get comments of a particular post":
                 'SELECT * FROM comment WHERE post_id="251125004903932_251125094903923"'+
-                ' ORDER BY created_time'};
+                ' ORDER BY created_time',
+                "Most commented posts":
+                "SELECT count(post_id), post.id, post.from_name, post.message "+
+                "FROM comment JOIN post ON post.id=post_id GROUP BY post_id "+
+                "ORDER BY count(post_id) DESC",
+                "Full-text serch":
+                'SELECT * FROM post_fts WHERE post_fts MATCH "random"'};
 
 
 $(document).ready(function () {

@@ -8,10 +8,6 @@ import sqlite3
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
 
-try :
-    import apsw
-except: pass
-
 app = Flask(__name__)
 
 MAX_LIMIT = 50
@@ -23,18 +19,15 @@ def main_page():
 
 @app.route("/search/posts")
 def search_posts():
-    conn = get_conn(GROUP_ID)
-    return query(search_web, conn, "post")
+    return query(search_web, "post")
 
 @app.route("/search/comments")
 def search_comments():
-    conn = get_conn(GROUP_ID)
-    return query(search_web, conn, "comment")
+    return query(search_web, "comment")
 
 @app.route("/query")
 def query_web():
-    conn = get_conn(GROUP_ID, readonly=True)
-    return query(safe_query, conn)
+    return query(safe_query)
 
 @app.route("/sql")
 def sql_page():
@@ -45,8 +38,9 @@ def stats():
     conn = get_conn(GROUP_ID)
     return render_template("stats.html")
 
-def query(fn, conn, *args):    
+def query(fn, *args):
     a = request.args
+    conn = get_conn(GROUP_ID)
     limit = int(a.get("limit", 10))
     offset = int(a.get("offset", 0))
     query = a.get("query")
@@ -81,20 +75,20 @@ def jsonize(fn):
 def curry(fn, *args):
     return lambda *more_args: fn(*(args + more_args))
 
-def get_conn(group_id, readonly=False):
+def get_conn(group_id):
     db_path = archiver.get_db_name(group_id)
     try:
         with open(db_path): pass
     except IOError:
         raise NameError("Database not found: " + db_path)
 
-    if readonly and apsw:
+    try:
         def row_trace(cursor, row):
             names = (l[0] for l in cursor.getdescription())
             return dict(zip(names, row))
         conn = apsw.Connection(db_path, flags=1) # SQLITE Read-Only flag
         conn.setrowtrace(row_trace)
-    else:
+    except:
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
     return conn
@@ -131,11 +125,14 @@ def main():
     args = parser.parse_args()
     GROUP_ID = args.group_id
     if args.production:
-        if not apsw:
+        try :
+            import apsw
+        except:
             raise ViewerError("Viewer must use apsw for database connections " +
                               "during production mode")
         app.run(host="0.0.0.0", port=80)
     else:
+        print "Running in debug mode, full write access to database"
         app.run(debug=True)
 
 if __name__ == '__main__':
