@@ -18,3 +18,5 @@ __pycache__
 *.db
 run-cron
 /conf.sh
+/.coverage
+/htmlcov
