@@ -26,7 +26,7 @@ query_cache = {}
 @app.route("/")
 def main_page():
     return render_template("main.html")
-    
+
 @app.route("/sql")
 def sql_page():
     return render_template("sql.html")
@@ -47,7 +47,7 @@ def schema_page():
         f.close()
     except:
         schema = "No schema found on server"
-    return render_template("schema.html", schema = schema)        
+    return render_template("schema.html", schema = schema)
 
 ## Ajax endpoints
 @app.route("/search/posts")
@@ -143,7 +143,7 @@ def search(where, conn, search_string, limit=25, offset=0):
              WHERE {1}_fts MATCH ? LIMIT ? OFFSET ?""".format(
                  ",".join(select_fields), where)
     return sql_query(conn, sql, search_string, limit, offset)
-    
+
 def sql_query(conn, sql, *args):
     cur = conn.cursor()
     rows = cur.execute(sql, args).fetchall()
@@ -158,14 +158,14 @@ def sql_query(conn, sql, *args):
 def cached_sql_query(conn, sql, *args):
     global db_modified_time, query_cache
     last_mod_time = os.path.getmtime(archiver.get_db_name(GROUP_ID))
-    
+
     if db_modified_time is None or last_mod_time > db_modified_time:
         # Flush cache
         query_cache = {}
         db_modified_time = last_mod_time
-    
+
     query = sql + repr(args)
-    
+
     if query in query_cache:
         return query_cache[query]
     else:
@@ -208,4 +208,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

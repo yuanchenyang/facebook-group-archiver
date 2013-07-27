@@ -14,14 +14,14 @@ def dt(day):
 
 class FBObject(object):
     fields = ["created_time", "message", "from_name"]
-    
+
     def __init__(self, message, day, from_name="Test Name"):
         assert 1 <= day <= 31, "Must be valid day!"
         self.created_time = dt(day)
         self.day = day
         self.message = message
         self.from_name = from_name
-        
+
     def to_object(self):
         return {"created_time" : self.created_time,
                 "message": self.message,
@@ -78,7 +78,7 @@ class Post(FBObject):
     fields = FBObject.fields + ["updated_time"]
     # This variable autoincrement as more posts are added
     post_id = 1
-        
+
     def __init__(self, message, day, from_name="Test Name"):
         FBObject.__init__(self, message, day, from_name)
         self.updated_time = dt(day)
@@ -86,7 +86,7 @@ class Post(FBObject):
         self.id = str(Post.post_id)
         self.table = "post"
         Post.post_id += 1
-    
+
     def update(self, new_day, message=None, from_name=None):
         assert new_day > self.day
         self.updated_time = dt(new_day)
@@ -108,10 +108,10 @@ class Post(FBObject):
         obj["updated_time"] = self.updated_time
         return obj
 
-    
+
 class Graph(object):
     """Imitator for GraphAPI's graph object"""
-    
+
     def __init__(self, ):
         """Takes in a list of post objects"""
         # Stores all created posts
@@ -122,8 +122,8 @@ class Graph(object):
             max_day = max(post.day for post in self.posts.values())
             assert day > max_day,\
                 "Inserted day {} must be greater than {}".format(day, max_day)
-        
-        
+
+
     def insert_post(self, post):
         self.assert_day(post.day)
         self.posts[str(post.id)] = post
@@ -132,7 +132,7 @@ class Graph(object):
         for id, post in self.posts.items():
             post.check_equals(conn)
         return True
-    
+
     def add_comment(self, post_id, message, day, from_name="Test Name"):
         self.assert_day(day)
         self.posts[post_id]._add_comment(message, day, from_name)
@@ -146,7 +146,7 @@ class Graph(object):
                     setattr(comment, name, val)
         else:
             setattr(post, name, val)
-    
+
     def get(self, endpoint):
         path, query = endpoint.split('?')
         path = path.split('/')
@@ -162,7 +162,7 @@ class Graph(object):
             return item.updated_time
 
         to_object = lambda li: [o.to_object() for o in li]
-            
+
         if path[1] == "feed":
             posts = self.posts.values()
             limit = int(params["limit"])
@@ -187,13 +187,13 @@ class BaseTest(unittest.TestCase):
         self.graph.insert_post(self.p1)
         self.graph.add_comment(self.p2.id, "c1", 3)
         self.graph.add_comment(self.p2.id, "c2", 4)
-        
+
 
 class MetaTest(BaseTest):
     def setUp(self):
         BaseTest.setUp(self)
         self.res = self.graph.get("test/feed?limit=1")
-    
+
     def test_paging_url(self):
         self.assertEqual("test/feed?limit=1&offset=1", self.res["paging"]["next"],
                          "Returns incorrect paging information")
@@ -202,7 +202,7 @@ class MetaTest(BaseTest):
         res2 = self.graph.get(self.res["paging"]["next"])
         self.assertIs(1, len(res2["data"]))
         self.assertEqual(self.p1.to_object(), res2["data"][0], "Is not p1")
-        
+
     def test_post_updating(self):
         last_post = self.res["data"]
         post = self.res["data"][0]
@@ -225,7 +225,7 @@ class ArchiverTest(BaseTest):
         try:
             os.remove(ArchiverTest.dbpath)
         except OSError: pass
-        
+
         BaseTest.setUp(self)
         archiver.POST_LIMIT = 1
 
@@ -266,7 +266,7 @@ class ArchiverTest(BaseTest):
         archiver.POST_LIMIT = 100
         self.ggp()
         self.check_graph()
-        
+
     def test_update_and_insert(self):
         self.ggp()
         p = Post("p4", 5)
@@ -281,7 +281,7 @@ class ArchiverTest(BaseTest):
         self.graph.update("updated_time", dt(5), self.p1.id)
         self.ggp()
         self.check_graph()
-        
+
     def test_update_all(self):
         self.ggp()
         self.graph.update("from_name", "Me!", self.p1.id)
@@ -301,4 +301,3 @@ class ArchiverTest(BaseTest):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=False, buffer=False)
-    

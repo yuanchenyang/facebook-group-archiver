@@ -15,11 +15,11 @@ function search(url, resetPaging, default_query, deltaPaging) {
         if (resetPaging) {
             paging = {offset: 0};
         }
-        
+
         function onSubmitted() {
             $(".clickable").removeAttr("disabled");
         }
-        
+
         send("get", url,
              {query:query, limit:LENGTH, offset:paging.offset},
              {}, function (err, res) {

@@ -51,11 +51,11 @@ POST_PARAMS = {'id': if_present('id'),
                'from_name': if_present('from', 'name'),
                'from_id': if_present('from', 'id'),
                'to_name': compose(str, if_present("to", "data")),
-               'message': if_present('message'), 
+               'message': if_present('message'),
                'link': if_present('link'),
-               'name': if_present('name'), 
-               'caption': if_present('caption'), 
-               'description': if_present('description'), 
+               'name': if_present('name'),
+               'caption': if_present('caption'),
+               'description': if_present('description'),
                'source': if_present('source') ,
                'type': if_present('type'),
                'place': compose(str, if_present('place'))}
@@ -109,7 +109,7 @@ def exists(conn, item_id, table_name):
 insert_comment = lambda comment, conn: insert(conn, comment,
                                               COMMENT_PARAMS, "comment")
 insert_post = lambda post, conn: insert(conn, post, POST_PARAMS, "post")
-    
+
 def insert_row(conn, table_name, key_val_map, update=False):
     keys, vals = zip(*key_val_map.items())
     c = conn.cursor()
@@ -145,7 +145,7 @@ def get_comments(conn, graph, post_id):
 
 def get_db_name(group_id):
      return DATABASE_DIR + "/" + str(group_id) + ".db"
-        
+
 def get_group_posts(graph, group_id, update_posts=False):
     # Make databases directory if not present
     if not os.path.isdir(DATABASE_DIR):
@@ -159,7 +159,7 @@ def get_group_posts(graph, group_id, update_posts=False):
 
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
-    
+
     latest_time_str = c.execute("SELECT MAX(updated_time) FROM post;").fetchone()[0]
     if latest_time_str is None:
         # Database is empty
@@ -172,7 +172,7 @@ def get_group_posts(graph, group_id, update_posts=False):
         posts_new = 0
         posts_updated = 0
         comments = 0
-        
+
         while 'data' in response and response['data'] and \
               len(response["data"]) > 0:
             for post in response['data']:
@@ -181,7 +181,7 @@ def get_group_posts(graph, group_id, update_posts=False):
                 if latest_datetime and time <= latest_datetime and\
                    not update_posts:
                     return posts_new, comments, posts_updated
-                    
+
                 if exists(conn, post_id, "post"):
                     update_dict = {}
                     if update_posts:
@@ -195,7 +195,7 @@ def get_group_posts(graph, group_id, update_posts=False):
                         assert updated_time is not None
                         update_dict["updated_time"] = updated_time
                         comments += get_comments(conn, graph, post_id)
-                        
+
                     update(conn, update_dict, post_id, "post")
                     posts_updated += 1
                 else:
@@ -203,14 +203,14 @@ def get_group_posts(graph, group_id, update_posts=False):
                     insert_post(post, conn)
                     comments += get_comments(conn, graph, post_id)
                     posts_new += 1
-                        
+
             print "Getting posts, total {0}".format(posts_new + posts_updated)
             conn.commit()
             newUrl = response["paging"]["next"].replace(
                 "https://graph.facebook.com/", "")
             response = graph.get(newUrl)
         return posts_new, comments, posts_updated
-        
+
     print "Inserted {} post(s), {} comment(s). Updated {} post(s)"\
         .format(*get_posts())
     conn.commit()
@@ -228,11 +228,11 @@ def main():
                         type=int, help="Archive a group")
     args = parser.parse_args()
     graph = GraphAPI(args.access_token)
-    
+
     if not args.group:
         print_groups(graph)
     else:
         get_group_posts(graph, args.group, update_posts=args.update)
-        
+
 if __name__ == '__main__':
     main()
