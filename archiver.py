@@ -12,13 +12,6 @@ COMMENT_LIMIT = 1000
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 DATABASE_DIR = BASE_PATH + "/databases"
 
-def get_date(*keys):
-    def f(o):
-        date = if_present(*keys)(o)
-        if date:
-            return iso8601.parse_date(date)
-    return f
-
 def if_present(*args):
     def get(obj):
         for arg in args:
@@ -28,6 +21,9 @@ def if_present(*args):
                 return None
         return obj
     return get
+
+def compose(f, g):
+    return lambda *args: f(g(*args))
 
 def print_groups(graph):
     groups = graph.get("me?fields=groups")
@@ -53,14 +49,16 @@ POST_PARAMS = {'id': if_present('id'),
                'created_time': if_present('created_time'),
                'updated_time': if_present('updated_time'),
                'from_name': if_present('from', 'name'),
-               'to_name': lambda o: None,
+               'from_id': if_present('from', 'id'),
+               'to_name': compose(str, if_present("to", "data")),
                'message': if_present('message'), 
                'link': if_present('link'),
                'name': if_present('name'), 
                'caption': if_present('caption'), 
                'description': if_present('description'), 
                'source': if_present('source') ,
-               'type': if_present('type')}
+               'type': if_present('type'),
+               'place': compose(str, if_present('place'))}
 
 COMMENT_PARAMS = {'id': if_present('id'),
                   'post_id': if_present('post_id'),
@@ -100,7 +98,8 @@ def update(conn, update_dict, obj_id, table_name):
     try:
         c.execute(query, vals + (obj_id,))
     except Exception as e:
-        print >>sys.stderr, "Error updating post table: " + str(e)
+        print >>sys.stderr, "Error updating {} table id {}: {}"\
+                   .format(table_name, obj_id, e)
 
 def exists(conn, item_id, table_name):
     c = conn.cursor()

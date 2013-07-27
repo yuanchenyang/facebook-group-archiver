@@ -3,6 +3,7 @@ CREATE TABLE post (
   created_time DATETIME NOT NULL,
   updated_time DATETIME NOT NULL,
   from_name TEXT NOT NULL,
+  from_id TEXT DEFAULT NULL,
   to_name TEXT DEFAULT NULL,
   message TEXT DEFAULT NULL,
   link TEXT DEFAULT NULL,
@@ -10,7 +11,8 @@ CREATE TABLE post (
   caption TEXT DEFAULT NULL,
   description TEXT DEFAULT NULL,
   source TEXT DEFAULT NULL,
-  type TEXT DEFAULT NULL
+  type TEXT DEFAULT NULL,
+  place TEXT DEFAULT NULL
 );
 
 CREATE TABLE comment (

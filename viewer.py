@@ -102,9 +102,6 @@ def search(where, conn, search_string, limit=25, offset=0):
              WHERE {1}_fts MATCH ? LIMIT ? OFFSET ?""".format(
                  ",".join(select_fields), where)
     return sql_query(conn, sql, search_string, limit, offset)
-
-sp = jsonize(curry(search, "post"))
-sc = jsonize(curry(search, "comment"))
     
 def sql_query(conn, sql, *args):
     cur = conn.cursor()
