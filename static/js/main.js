@@ -26,7 +26,7 @@ function search(url, resetPaging, default_query, deltaPaging) {
             onSubmitted();
             if (! err) {
                 $("#search-result").empty().append(res);
-                if ($(".result").length < LENGTH) {
+                if ($(".result").length <= LENGTH) {
                     $(".btn-next").attr("disabled", "disabled");
                 } else {
                     $(".btn-next").click(search(url, false, query, LENGTH));

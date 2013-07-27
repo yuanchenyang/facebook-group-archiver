@@ -23,9 +23,21 @@ def sql_page():
     return render_template("sql.html")
 
 @app.route("/stats")
-def stats():
+def stats_page():
     conn = get_conn(GROUP_ID)
+    
     return render_template("stats.html")
+
+@app.route("/schema")
+def schema_page():
+    try:
+        f = open("bootstrap.sql")
+        schema = f.read()
+        f.close()
+    except:
+        schema = "No schema found on server"
+    return render_template("schema.html", schema = schema)
+        
 
 ## Ajax endpoints
 @app.route("/search/posts")
@@ -39,8 +51,6 @@ def search_comments():
 @app.route("/query")
 def query_web():
     return query(safe_query)
-
-
 
 def query(fn, *args):
     a = request.args
