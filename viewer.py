@@ -4,9 +4,11 @@ import argparse
 import archiver
 import json
 import sqlite3
+import time
 
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
+from werkzeug.serving import BaseRequestHandler
 
 app = Flask(__name__)
 
@@ -25,8 +27,10 @@ def sql_page():
 @app.route("/stats")
 def stats_page():
     conn = get_conn(GROUP_ID)
-    
-    return render_template("stats.html")
+    posts = get_chart_data_by_date(conn, "post")
+    comments = get_chart_data_by_date(conn, "comment")
+    conn.close()
+    return render_template("stats.html", posts=posts, comments=comments)
 
 @app.route("/schema")
 def schema_page():
@@ -81,6 +85,22 @@ def search_web(conn, query, limit, offset, where):
                            limit=limit, offset=offset,
                            results_length=len(results))
 
+def get_chart_data_by_date(conn, table):
+    sql = 'SELECT count(*) AS count, ' +\
+          'STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) ' +\
+          'AS month FROM {} GROUP BY month ORDER BY month'.format(table)
+    results = sql_query(conn, sql)
+    data = {}
+    dataset = {"fillColor" : "rgba(151,187,205,0.5)",
+               "strokeColor" : "rgba(151,187,205,1)",
+               "pointColor" : "rgba(151,187,205,1)",
+               "pointStrokeColor" : "#fff"}
+    dataset["data"] = [result["count"] for result in results]
+    data["datasets"] = [dataset]
+    data["labels"] = [result["month"] for result in results]
+    return json.dumps(data)
+
+
 class ViewerError(Exception):
     pass
 
@@ -129,6 +149,21 @@ def sql_query(conn, sql, *args):
         ret_rows.append(d)
     return ret_rows
 
+class TimedRequestHandler(BaseRequestHandler):
+    """Extend werkzeug request handler to suit our needs."""
+    def handle(self):
+        self.started = time.time()
+        rv = super(TimedRequestHandler, self).handle()
+        return rv
+
+    def send_response(self, *args, **kw):
+        self.processed = time.time()
+        super(TimedRequestHandler, self).send_response(*args, **kw)
+
+    def log_request(self, code='-', size='-'):
+        duration = int((self.processed - self.started) * 1000)
+        self.log('info', '"%s" %s %s [%sms]', self.requestline, code, size, duration)
+
 def main():
     global GROUP_ID
     parser = argparse.ArgumentParser(description='Opens a saved group')
@@ -142,10 +177,10 @@ def main():
         except:
             raise ViewerError("Viewer must use apsw for database connections " +
                               "during production mode")
-        app.run(host="0.0.0.0", port=80)
+        app.run(host="0.0.0.0", port=80, request_handler=TimedRequestHandler)
     else:
         print "Running in debug mode, full write access to database"
-        app.run(debug=True)
+        app.run(debug=True, request_handler=TimedRequestHandler)
 
 if __name__ == '__main__':
     main()

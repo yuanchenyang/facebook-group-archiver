@@ -30,7 +30,7 @@ do
     touch $LOGFILE
     echo "" >> $LOGFILE
     date >> $LOGFILE
-    python $PATH_TO/archiver.py -g $ID $TOKEN >>$LOGFILE 2>&1
+    python $PATH_TO/archiver.py $@ -g $ID $TOKEN >>$LOGFILE 2>&1
     
     # Make symlinks
     if [ ! -f $DBPATH/$NAME.db ]

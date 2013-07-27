@@ -2,11 +2,24 @@
 
 {% block content %}
 <div class="row-fluid">
-  <div class="span6">
-    
+  <div class="span12">
+    <h2>Posts over time</h2>
+    <canvas id="posts-canvas" height="300px"></canvas>
   </div>
-  <div class="span6">
+</div>
+<div class="row-fluid">
+  <div class="span12">
+    <h2>Comments over time</h2>
+    <canvas id="comments-canvas" height="300px"></canvas>
   </div>
 </div>
 {% endblock %}
 
+{% block tail_script %}
+<script src="/static/js/Chart.min.js"></script>
+<script>
+  var posts = {{ posts | safe}}
+  var comments = {{ comments | safe}}
+</script>
+<script src="/static/js/stats.js"></script>
+{% endblock %}

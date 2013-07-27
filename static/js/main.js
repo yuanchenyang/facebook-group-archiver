@@ -1,7 +1,7 @@
 var paging = {offset: 0};
 var LENGTH = 25;
 
-function attach_handlers() {
+function attachHandlers() {
     $("#search-posts").click(search("/search/posts", true));
     $("#search-comments").click(search("/search/comments", true));
 }
@@ -26,7 +26,7 @@ function search(url, resetPaging, default_query, deltaPaging) {
             onSubmitted();
             if (! err) {
                 $("#search-result").empty().append(res);
-                if ($(".result").length <= LENGTH) {
+                if ($(".result").length < LENGTH) {
                     $(".btn-next").attr("disabled", "disabled");
                 } else {
                     $(".btn-next").click(search(url, false, query, LENGTH));
@@ -65,4 +65,4 @@ function send(method, url, params, data, callback) {
     $.ajax(url, config);
 }
 
-$(document).ready(attach_handlers);
+$(document).ready(attachHandlers);
