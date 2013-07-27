@@ -127,7 +127,7 @@ def get_comments(conn, graph, post_id):
     COMMENT_LIMIT. If the total number of comments is greater than
     COMMENT_LIMIT, this will not get all the comments. This will be fixed when I
     manage to figure out how to incrementally get all the comments, as
-    facebook's comments API is pretty screwed up right now.
+    facebook's comments API's paging is pretty screwed up right now.
 
     """
     if post_id is None:
