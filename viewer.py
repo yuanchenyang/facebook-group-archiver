@@ -13,10 +13,21 @@ app = Flask(__name__)
 MAX_LIMIT = 50
 GROUP_ID = None # Will be set once when program starts
 
+## HTML Pages
 @app.route("/")
 def main_page():
     return render_template("main.html")
+    
+@app.route("/sql")
+def sql_page():
+    return render_template("sql.html")
 
+@app.route("/stats")
+def stats():
+    conn = get_conn(GROUP_ID)
+    return render_template("stats.html")
+
+## Ajax endpoints
 @app.route("/search/posts")
 def search_posts():
     return query(search_web, "post")
@@ -29,14 +40,7 @@ def search_comments():
 def query_web():
     return query(safe_query)
 
-@app.route("/sql")
-def sql_page():
-    return render_template("sql.html")
 
-@app.route("/stats")
-def stats():
-    conn = get_conn(GROUP_ID)
-    return render_template("stats.html")
 
 def query(fn, *args):
     a = request.args
@@ -57,7 +61,8 @@ def safe_query(conn, query, limit, offset):
     except Exception as e:
         sql_str = query + " LIMIT {} OFFSET {}".format(limit, offset)
         return render_template("error.html", sql=sql_str, e=str(e))
-    
+    finally:
+        conn.close()
 
 def search_web(conn, query, limit, offset, where):
     results = search(where, conn, query, limit, offset)
