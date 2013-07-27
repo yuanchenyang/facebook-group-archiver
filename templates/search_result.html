@@ -10,10 +10,10 @@
 </div>
 <div class="row-fluid">
   {% set id = result["id"] %}
-  <a href="https://www.facebook.com/{{ id }}">{{ id }}</a>
+  <a href="https://www.facebook.com/{{ id }}"> Facebook Link</a>
 </div>
 <div class="row-fluid">
-  {{ result["snippet(" + where + "_fts)"] | safe}}
+  {{ result["snippet"] | safe}}
 </div>
 {% endfor %}
 {% endblock %}

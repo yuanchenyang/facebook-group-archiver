@@ -5,6 +5,7 @@ import archiver
 import json
 import sqlite3
 import time
+import os
 
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
@@ -13,7 +14,13 @@ from werkzeug.serving import BaseRequestHandler
 app = Flask(__name__)
 
 MAX_LIMIT = 50
-GROUP_ID = None # Will be set once when program starts
+# Will be set once when program starts
+GROUP_ID = None
+
+# Used for caching queries, may not be threadsafe
+# This probably isn't the right way to do it
+db_modified_time = None
+query_cache = {}
 
 ## HTML Pages
 @app.route("/")
@@ -40,8 +47,7 @@ def schema_page():
         f.close()
     except:
         schema = "No schema found on server"
-    return render_template("schema.html", schema = schema)
-        
+    return render_template("schema.html", schema = schema)        
 
 ## Ajax endpoints
 @app.route("/search/posts")
@@ -81,7 +87,7 @@ def safe_query(conn, query, limit, offset):
 def search_web(conn, query, limit, offset, where):
     results = search(where, conn, query, limit, offset)
     conn.close()
-    return render_template("search_result.html", results=results, where=where,
+    return render_template("search_result.html", results=results,
                            limit=limit, offset=offset,
                            results_length=len(results))
 
@@ -89,7 +95,7 @@ def get_chart_data_by_date(conn, table):
     sql = 'SELECT count(*) AS count, ' +\
           'STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) ' +\
           'AS month FROM {} GROUP BY month ORDER BY month'.format(table)
-    results = sql_query(conn, sql)
+    results = cached_sql_query(conn, sql)
     data = {}
     dataset = {"fillColor" : "rgba(151,187,205,0.5)",
                "strokeColor" : "rgba(151,187,205,1)",
@@ -132,7 +138,7 @@ def search(where, conn, search_string, limit=25, offset=0):
     if limit > MAX_LIMIT:
         raise ViewerError("Limit exceeds MAX_LIMIT = " + str(MAX_LIMIT))
     select_fields = ["from_name", "created_time", "id",
-                     "snippet({}_fts)".format(where)]
+                     "snippet({}_fts) AS snippet".format(where)]
     sql = """SELECT {0} FROM {1}_fts JOIN {1} ON {1}_id={1}.id
              WHERE {1}_fts MATCH ? LIMIT ? OFFSET ?""".format(
                  ",".join(select_fields), where)
@@ -148,6 +154,24 @@ def sql_query(conn, sql, *args):
             d[key] = row[key]
         ret_rows.append(d)
     return ret_rows
+
+def cached_sql_query(conn, sql, *args):
+    global db_modified_time, query_cache
+    last_mod_time = os.path.getmtime(archiver.get_db_name(GROUP_ID))
+    
+    if db_modified_time is None or last_mod_time > db_modified_time:
+        # Flush cache
+        query_cache = {}
+        db_modified_time = last_mod_time
+    
+    query = sql + repr(args)
+    
+    if query in query_cache:
+        return query_cache[query]
+    else:
+        result = sql_query(conn, sql, *args)
+        query_cache[query] = result
+        return result
 
 class TimedRequestHandler(BaseRequestHandler):
     """Extend werkzeug request handler to suit our needs."""
