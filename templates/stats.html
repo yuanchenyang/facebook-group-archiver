@@ -1,6 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
+<h1 align="center"> {{group["name"]}} </h1>
+
+<div class="row-fluid">
+  <div class="span2"></div>
+  <div class="span8">
+    <p></p>
+    {% set paragraphs = group["description"].lstrip().rstrip().split("\n\n") %}
+    {% if paragraphs.__len__() == 1 %}
+      <p align="center"><small>{{ paragraphs[0] }}</small></p>
+    {% else %}
+      {% for paragraph in paragraphs %}
+      <p><small>{{ paragraph }}</small></p>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <div class="span2"></div>
+</div>
+
+<hr>
 <div class="row-fluid">
   <div class="span12">
     <h2>Posts</h2>

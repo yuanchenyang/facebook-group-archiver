@@ -32,7 +32,6 @@ def sql_page():
     return render_template("sql.html")
 
 @app.route("/")
-@app.route("/stats")
 def stats_page():
 
     colors = ["#E25A02", "#F1DB85", "#93D250", "#01A278", "#007BA7", "#9C014F",
@@ -76,11 +75,15 @@ def stats_page():
         return results, data
 
     conn = get_conn(GROUP_ID)
+
+    group = cached_sql_query(conn, "SELECT * FROM fb_group")[0]
+
     posts_data = get_chart_data_by_date("post")
     comments_data = get_chart_data_by_date("comment")
     rankings = {"post": get_top_ranked("post"),
                 "comment": get_top_ranked("comment")}
     conn.close()
+    print group
     return render_template("stats.html", **locals())
 
 @app.route("/schema")
