@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -f conf.sh ]
-then 
+then
     source conf.sh
 else
     echo "Nothing to update!"
@@ -14,9 +14,9 @@ for ID in ${FB_GROUPS[@]}
 do
     LOGFILE=$LOGPATH/$ID.log
     touch $LOGFILE
-    echo -e "\nUpdating Database" >> $LOGFILE
     date >> $LOGFILE
-    
+    echo -e "\nUpdating Database" >> $LOGFILE
+
     if [ -f $PATH_TO/update.sql ]
     then
         cat $PATH_TO/update.sql | sqlite3 $DBPATH/$ID.db >> $LOGFILE 2>&1
