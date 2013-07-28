@@ -1,6 +1,7 @@
 {% extends "result.html" %}
 
 {% block result_body %}
+<h2>Searching {{ where }}s</h2>
 {% for result in results %}
 <div class="row-fluid result">
   <h4>{{ result["from_name"] }}</h4>
@@ -17,5 +18,3 @@
 </div>
 {% endfor %}
 {% endblock %}
-
-

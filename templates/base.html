@@ -10,7 +10,7 @@
     <style> body { padding-top: 90px; } </style> <!-- Bootstrap -->
     <link href="/static/css/main.css" rel="stylesheet" />
     {% block style_block %}{# page-specific CSS #}{% endblock %}
-    <script src="/static/js/modernizr.min.js"></script>
+    <script src="/static/js/lib/modernizr.min.js"></script>
     {# Modernizr must be here, above body tag. #}
     {% block head_script %}{# defer-incapable JS block #}{% endblock %}
   </head>
@@ -33,9 +33,9 @@
     <script src=""></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script>
-      window.jQuery || document.write('<script src="static/js/jquery-1.10.2.min.js">\x3C/script>')
+      window.jQuery || document.write('<script src="static/js/lib/jquery-1.10.2.min.js">\x3C/script>')
       </script>
-      <script src="/static/js/bootstrap.min.js"></script>
+      <script src="/static/js/lib/bootstrap.min.js"></script>
       {% block tail_script %}{# defer-capable JS block #}{% endblock %}
   </body>
 </html>

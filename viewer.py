@@ -129,10 +129,9 @@ def safe_query(conn, query, limit, offset):
 
 def search_web(conn, query, limit, offset, where):
     results = search(where, conn, query, limit, offset)
+    results_length=len(results)
     conn.close()
-    return render_template("search_result.html", results=results,
-                           limit=limit, offset=offset,
-                           results_length=len(results))
+    return render_template("search_result.html", **locals())
 
 
 class ViewerError(Exception):
