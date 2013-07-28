@@ -23,14 +23,15 @@ db_modified_time = None
 query_cache = {}
 
 ## HTML Pages
-@app.route("/")
+@app.route("/search")
 def main_page():
-    return render_template("main.html")
+    return render_template("search.html")
 
 @app.route("/sql")
 def sql_page():
     return render_template("sql.html")
 
+@app.route("/")
 @app.route("/stats")
 def stats_page():
 
