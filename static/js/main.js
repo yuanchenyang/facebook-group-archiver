@@ -4,6 +4,11 @@ var LENGTH = 25;
 function attachHandlers() {
     $("#search-posts").click(search("/search/posts", true));
     $("#search-comments").click(search("/search/comments", true));
+    $("#search-field").keypress(function (e) {
+        if (e.which == 13) {
+            $(".default-button").click();
+        }
+    });
 }
 
 function search(url, resetPaging, default_query, deltaPaging) {
