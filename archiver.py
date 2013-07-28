@@ -148,7 +148,7 @@ def get_db_name(group_id):
 
 def update_group_info(conn, graph, group_id):
     """Updates the fb_group table of the database"""
-    result = graph.get("/" + str(group_id))
+    result = graph.get(str(group_id))
     ip = if_present
     data = {"group_id": ip("id")(result),
             "owner_name": ip("owner", "name")(result),

@@ -4,6 +4,7 @@ import datetime
 import os
 import sqlite3
 import pdb
+import urlparse
 
 YEAR = 2013
 MONTH = 1
@@ -112,10 +113,11 @@ class Post(FBObject):
 class Graph(object):
     """Imitator for GraphAPI's graph object"""
 
-    def __init__(self, ):
-        """Takes in a list of post objects"""
+    def __init__(self):
         # Stores all created posts
         self.posts = {}
+        # Stores group information
+        self.group = {}
 
     def assert_day(self, day):
         if len(self.posts) > 0:
@@ -128,9 +130,20 @@ class Graph(object):
         self.assert_day(post.day)
         self.posts[str(post.id)] = post
 
+    def add_group(self, group):
+        self.group = group
+
     def check_equals(self, conn):
         for id, post in self.posts.items():
             post.check_equals(conn)
+
+        # Checks that group info has been updated
+        conn.row_factory = sqlite3.Row
+        fb_group = conn.execute("SELECT * FROM fb_group").fetchone()
+        fb_group_dict = {key: fb_group[key] for key in fb_group.keys()}
+        for key, value in self.group.items():
+            assert fb_group[key] == value, "Group is not updated, expected:" +\
+                "\n{}\nGot:\n{}".format(self.group, fb_group_dict)
         return True
 
     def add_comment(self, post_id, message, day, from_name="Test Name"):
@@ -148,14 +161,9 @@ class Graph(object):
             setattr(post, name, val)
 
     def get(self, endpoint):
-        path, query = endpoint.split('?')
-        path = path.split('/')
-        query = query.split('&')
-        params = {}
-        for item in query:
-            key, val = item.split('=')
-            params[key] = val
-
+        p = urlparse.urlparse(endpoint)
+        path = p.path.split('/')
+        params = urlparse.parse_qs(p.query)
         def time_sort(item):
             if isinstance(item, Comment):
                 return item.created_time
@@ -163,23 +171,29 @@ class Graph(object):
 
         to_object = lambda li: [o.to_object() for o in li]
 
-        if path[1] == "feed":
+        if len(path) > 1 and path[1] == "feed":
             posts = self.posts.values()
-            limit = int(params["limit"])
-            offset = int(params["offset"]) if "offset" in params else 0
+            limit = int(params["limit"][0])
+            offset = int(params["offset"][0]) if "offset" in params else 0
             end = offset+limit
             return {"data": to_object(sorted(posts, key=time_sort,
                                              reverse=True)[offset:end]),
                     "paging": {"next" : "{}/feed?limit={}&offset={}".format(
                         path[0], limit, end)}}
-        elif path[1] == "comments":
+        elif len(path) > 1 and path[1] == "comments":
             post_id = path[0]
             return {"data": to_object(sorted(self.posts[post_id].comments,
                                              key=time_sort))}
+        else:
+            return self.group
 
 
 class BaseTest(unittest.TestCase):
     def setUp(self):
+        # No group id because that stored under a different name in database
+        self.group_info = {"name": "test_group",
+                           "description": "testing",
+                           "updated_time": dt(1)}
         self.graph = Graph()
         self.p1 = Post("p1", 2)
         self.p2 = Post("p2", 1)
@@ -259,6 +273,18 @@ class ArchiverTest(BaseTest):
         p = Post("p4", 5)
         self.graph.insert_post(p)
         self.graph.add_comment(p.id, "c4", 6)
+        self.ggp()
+        self.check_graph()
+
+    def test_get_group_info(self):
+        self.graph.add_group(self.group_info)
+        self.ggp()
+        self.check_graph()
+
+    def test_update_group_info(self):
+        self.graph.add_group(self.group_info)
+        self.ggp()
+        self.graph.group["updated_time"] = dt(2)
         self.ggp()
         self.check_graph()
 
