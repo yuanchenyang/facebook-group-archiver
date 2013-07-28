@@ -34,10 +34,19 @@ def sql_page():
 @app.route("/stats")
 def stats_page():
 
-    COLORS = ["#E25A02", "#F1DB85", "#93D250", "#01A278", "#007BA7", "#9C014F",
+    colors = ["#E25A02", "#F1DB85", "#93D250", "#01A278", "#007BA7", "#9C014F",
               "#D18726", "#E7E7E7", "#CC6602", "#FED833", "#FDA8BB", "#FFFF66",
               "#336601", "#36C2A3", "#009900", "#FFCC66", "#DB9796", "#7F7F7F",
               "#96B2D7", "#C5E9DF"]
+    color_index = [0] # hack for nonlocal variable
+    name_colors = {}
+
+    def get_color(name):
+        if name not in name_colors:
+            name_colors[name] = colors[color_index[0] % len(colors)]
+            color_index[0] += 1
+        return name_colors[name]
+
 
     def get_chart_data_by_date(table):
         sql = 'SELECT count(*) AS count, ' +\
@@ -60,8 +69,9 @@ def stats_page():
         results = cached_sql_query(conn, sql)
         data = []
         for i, result in enumerate(results):
-            data.append({"value": result["count"], "color":COLORS[i]})
-            result["color"] = COLORS[i]
+            color = get_color(result["from_name"])
+            data.append({"value": result["count"], "color":color})
+            result["color"] = color
         return results, data
 
     conn = get_conn(GROUP_ID)
