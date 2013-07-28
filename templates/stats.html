@@ -15,25 +15,26 @@
 </div>
 <p>
 <div class="row-fluid">
-  {% for kind, ranking in rankings.items() %}
+  {% for kind in ["post", "comment"] %}
+  {% set ranking = rankings[kind] %}
   <div class="span6">
     <h2>Top {{ kind }}ers</h2>
     <canvas id="{{ kind }}er-canvas" height="300px"></canvas>
     <table class="table table-striped">
       <tr>
         <th>Name</th>
-        <th>Key</th>
         <th>Posts</th>
+        <th>Key</th>
       </tr>
       {% for result in ranking[0] %}
       <tr>
         <td>{{ result["from_name"] }}</td>
+        <td>{{ result["count"] }}</td>
         <td>
           <span style="background-color: {{ result['color'] }};">
             &nbsp;&nbsp;&nbsp;&nbsp;
           </span>
         </td>
-        <td>{{ result["count"] }}</td>
       </tr>
       {% endfor %}
     </table>
