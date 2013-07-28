@@ -146,6 +146,19 @@ def get_comments(conn, graph, post_id):
 def get_db_name(group_id):
      return DATABASE_DIR + "/" + str(group_id) + ".db"
 
+def update_group_info(conn, graph, group_id):
+    """Updates the fb_group table of the database"""
+    result = graph.get("/" + str(group_id))
+    ip = if_present
+    data = {"group_id": ip("id")(result),
+            "owner_name": ip("owner", "name")(result),
+            "name": ip("name")(result),
+            "description": ip("description")(result),
+            "updated_time": ip("updated_time")(result)}
+
+    update(conn, data, 1, "fb_group") # 1 is the id of the only row in fb_group
+                                      # table
+
 def get_group_posts(graph, group_id, update_posts=False):
     # Make databases directory if not present
     if not os.path.isdir(DATABASE_DIR):
@@ -166,6 +179,9 @@ def get_group_posts(graph, group_id, update_posts=False):
         latest_datetime = None
     else:
         latest_datetime = iso8601.parse_date(latest_time_str)
+
+    # Updates every time
+    update_group_info(conn, graph, group_id)
 
     def get_posts():
         response = graph.get("{0}/feed?limit={1}".format(group_id, POST_LIMIT))
