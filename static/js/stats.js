@@ -1,13 +1,15 @@
 function renderContents() {
-    drawChart("posts-canvas", posts);
-    drawChart("comments-canvas", comments);
+    drawChart("posts-canvas").Line(postsChart, {});
+    drawChart("comments-canvas").Line(commentsChart, {});
+    drawChart("poster-canvas").Doughnut(posters, {});
+    drawChart("commenter-canvas").Doughnut(commenters, {});
 }
 
-function drawChart(id, data) {
+function drawChart(id) {
     var canvas = $("#" + id);
     canvas.attr("width", canvas.parent().width()); // Resize canvas
     var ctx = canvas.get(0).getContext("2d");
-    new Chart(ctx).Line(data, {});
+    return new Chart(ctx);
 }
 
 $(document).ready(renderContents);

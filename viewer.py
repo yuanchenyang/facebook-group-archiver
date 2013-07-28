@@ -33,11 +33,44 @@ def sql_page():
 
 @app.route("/stats")
 def stats_page():
+
+    COLORS = ["#E25A02", "#F1DB85", "#93D250", "#01A278", "#007BA7", "#9C014F",
+              "#D18726", "#E7E7E7", "#CC6602", "#FED833", "#FDA8BB", "#FFFF66",
+              "#336601", "#36C2A3", "#009900", "#FFCC66", "#DB9796", "#7F7F7F",
+              "#96B2D7", "#C5E9DF"]
+
+    def get_chart_data_by_date(table):
+        sql = 'SELECT count(*) AS count, ' +\
+              'STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) ' +\
+              'AS month FROM {} GROUP BY month ORDER BY month'.format(table)
+        results = cached_sql_query(conn, sql)
+        data = {}
+        dataset = {"fillColor" : "rgba(86,61,124,0.5)",
+                   "strokeColor" : "rgba(86,61,124,1)",
+                   "pointColor" : "rgba(86,61,124,1)",
+                   "pointStrokeColor" : "#fff"}
+        dataset["data"] = [result["count"] for result in results]
+        data["datasets"] = [dataset]
+        data["labels"] = [result["month"] for result in results]
+        return json.dumps(data)
+
+    def get_top_ranked(table):
+        sql = ("SELECT from_name, count(*) as count FROM {} GROUP BY from_name " +\
+               "ORDER BY count DESC LIMIT 20").format(table)
+        results = cached_sql_query(conn, sql)
+        data = []
+        for i, result in enumerate(results):
+            data.append({"value": result["count"], "color":COLORS[i]})
+            result["color"] = COLORS[i]
+        return results, data
+
     conn = get_conn(GROUP_ID)
-    posts = get_chart_data_by_date(conn, "post")
-    comments = get_chart_data_by_date(conn, "comment")
+    posts_data = get_chart_data_by_date("post")
+    comments_data = get_chart_data_by_date("comment")
+    rankings = {"post": get_top_ranked("post"),
+                "comment": get_top_ranked("comment")}
     conn.close()
-    return render_template("stats.html", posts=posts, comments=comments)
+    return render_template("stats.html", **locals())
 
 @app.route("/schema")
 def schema_page():
@@ -47,7 +80,7 @@ def schema_page():
         f.close()
     except:
         schema = "No schema found on server"
-    return render_template("schema.html", schema = schema)
+    return render_template("schema.html", **locals())
 
 ## Ajax endpoints
 @app.route("/search/posts")
@@ -75,9 +108,8 @@ def safe_query(conn, query, limit, offset):
         raise ViewerError("Limit exceeds MAX_LIMIT = " + str(MAX_LIMIT))
     try:
         results = sql_query(conn, query + " LIMIT ? OFFSET ?", limit, offset)
-        return render_template("sql_result.html", results=results,
-                               results_length=len(results), limit=limit,
-                               offset=offset)
+        results_length = len(results)
+        return render_template("sql_result.html", **locals())
     except Exception as e:
         sql_str = query + " LIMIT {} OFFSET {}".format(limit, offset)
         return render_template("error.html", sql=sql_str, e=str(e))
@@ -90,21 +122,6 @@ def search_web(conn, query, limit, offset, where):
     return render_template("search_result.html", results=results,
                            limit=limit, offset=offset,
                            results_length=len(results))
-
-def get_chart_data_by_date(conn, table):
-    sql = 'SELECT count(*) AS count, ' +\
-          'STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) ' +\
-          'AS month FROM {} GROUP BY month ORDER BY month'.format(table)
-    results = cached_sql_query(conn, sql)
-    data = {}
-    dataset = {"fillColor" : "rgba(151,187,205,0.5)",
-               "strokeColor" : "rgba(151,187,205,1)",
-               "pointColor" : "rgba(151,187,205,1)",
-               "pointStrokeColor" : "#fff"}
-    dataset["data"] = [result["count"] for result in results]
-    data["datasets"] = [dataset]
-    data["labels"] = [result["month"] for result in results]
-    return json.dumps(data)
 
 
 class ViewerError(Exception):

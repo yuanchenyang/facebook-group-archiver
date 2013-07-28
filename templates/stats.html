@@ -13,13 +13,42 @@
     <canvas id="comments-canvas" height="300px"></canvas>
   </div>
 </div>
+<p>
+<div class="row-fluid">
+  {% for kind, ranking in rankings.items() %}
+  <div class="span6">
+    <h2>Top {{ kind }}ers</h2>
+    <canvas id="{{ kind }}er-canvas" height="300px"></canvas>
+    <table class="table table-striped">
+      <tr>
+        <th>Name</th>
+        <th>Key</th>
+        <th>Posts</th>
+      </tr>
+      {% for result in ranking[0] %}
+      <tr>
+        <td>{{ result["from_name"] }}</td>
+        <td>
+          <span style="background-color: {{ result['color'] }};">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+          </span>
+        </td>
+        <td>{{ result["count"] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endfor %}
+</div>
 {% endblock %}
 
 {% block tail_script %}
 <script src="/static/js/Chart.min.js"></script>
 <script>
-  var posts = {{ posts | safe}}
-  var comments = {{ comments | safe}}
+  var postsChart = {{ posts_data | safe}}
+  var commentsChart = {{ comments_data | safe}}
+  var posters = {{ rankings["post"][1] | safe}}
+  var commenters = {{ rankings["comment"][1] | safe}}
 </script>
 <script src="/static/js/stats.js"></script>
 {% endblock %}

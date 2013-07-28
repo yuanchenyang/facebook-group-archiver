@@ -9,14 +9,14 @@ var examples = {"Posts by most recent":
                 'SELECT * FROM comment WHERE post_id="251125004903932_251125094903923"'+
                 ' ORDER BY created_time',
                 "Most commented posts":
-                "SELECT count(*) AS COUNT, post.id, post.from_name, post.message "+
+                "SELECT count(*) AS Count, post.id, post.from_name, post.message "+
                 "FROM comment JOIN post ON post.id=post_id GROUP BY post_id "+
                 "ORDER BY COUNT DESC",
                 "Full-text serch":
                 'SELECT * FROM post_fts WHERE post_fts MATCH "random"',
                 "Total comments by month":
                 'SELECT count(*), STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) '+
-                'AS MONTH FROM comment GROUP BY MONTH ORDER BY MONTH DESC'};
+                'AS Month FROM comment GROUP BY Month ORDER BY Month DESC'};
 
 
 $(document).ready(function () {
