@@ -83,7 +83,6 @@ def stats_page():
     rankings = {"post": get_top_ranked("post"),
                 "comment": get_top_ranked("comment")}
     conn.close()
-    print group
     return render_template("stats.html", **locals())
 
 @app.route("/schema")
