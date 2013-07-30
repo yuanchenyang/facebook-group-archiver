@@ -3,17 +3,17 @@
 {% block result_body %}
 <h2>Searching {{ where }}s</h2>
 {% for result in results %}
-<div class="row-fluid result">
+<div class="row result">
   <h4>{{ result["from_name"] }}</h4>
 </div>
-<div class="row-fluid">
+<div class="row">
   <small> {{ result["created_time"] }} </small>
 </div>
-<div class="row-fluid">
+<div class="row">
   {% set id = result["id"] %}
   <a href="https://www.facebook.com/{{ id }}"> Facebook Link</a>
 </div>
-<div class="row-fluid">
+<div class="row">
   {{ result["snippet"] | safe}}
 </div>
 {% endfor %}

@@ -3,7 +3,7 @@
 {% block content %}
 <h1 align="center"> {{group["name"]}} </h1>
 
-<div class="row-fluid">
+<div class="row">
   <div class="span2"></div>
   <div class="span8">
     <p></p>
@@ -20,20 +20,20 @@
 </div>
 
 <hr>
-<div class="row-fluid">
+<div class="row">
   <div class="span12">
     <h2>Posts</h2>
     <canvas id="posts-canvas" height="300px"></canvas>
   </div>
 </div>
-<div class="row-fluid">
+<div class="row">
   <div class="span12">
     <h2>Comments</h2>
     <canvas id="comments-canvas" height="300px"></canvas>
   </div>
 </div>
 <p>
-<div class="row-fluid">
+<div class="row">
   {% for kind in ["post", "comment"] %}
   {% set ranking = rankings[kind] %}
   <div class="span6">
