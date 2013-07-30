@@ -1,11 +1,11 @@
-import pickle
-import sys
 import argparse
-import archiver
 import json
 import sqlite3
 import time
+import sys
 import os
+
+import archiver
 
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect

@@ -1,8 +1,8 @@
 from facepy import GraphAPI
 import argparse
-import pickle
 import sqlite3
-import sys, os
+import sys
+import os
 import datetime
 import iso8601
 
