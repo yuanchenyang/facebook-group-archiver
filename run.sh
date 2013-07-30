@@ -10,9 +10,10 @@ else
     echo "# PATH_TO:    Directory containing archiver.py" >> conf.sh
     echo "# FB_GROUPS:  Array of facebook group IDs to archive" >> conf.sh
     echo "# GROUPNAMES: Array of human-readable names corresponding to FB_GROUPS" >> conf.sh
-    echo -e '\nTOKEN=""\nPATH_TO=`pwd`\nFB_GROUPS=("")\nGROUPNAMES=("")' >> conf.sh
+    echo -e '\nTOKEN=""\nPATH_TO=' `pwd` '\nFB_GROUPS=("")\nGROUPNAMES=("")' >> conf.sh
 
     echo "Please edit conf.sh and run again"
+    exit 0
 fi
 
 gLen=${#FB_GROUPS[@]}
