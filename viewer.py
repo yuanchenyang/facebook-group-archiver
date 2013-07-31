@@ -5,6 +5,10 @@ import time
 import sys
 import os
 
+try:
+    import apsw
+except: pass
+
 import archiver
 
 from collections import OrderedDict
@@ -16,6 +20,7 @@ app = Flask(__name__)
 MAX_LIMIT = 50
 # Will be set once when program starts
 GROUP_ID = None
+PROD = False
 
 # Used for caching queries, may not be threadsafe
 # This probably isn't the right way to do it
@@ -152,13 +157,13 @@ def get_conn(group_id):
     except IOError:
         raise NameError("Database not found: " + db_path)
 
-    try:
+    if PROD:
         def row_trace(cursor, row):
             names = (l[0] for l in cursor.getdescription())
             return dict(zip(names, row))
         conn = apsw.Connection(db_path, flags=1) # SQLITE Read-Only flag
         conn.setrowtrace(row_trace)
-    except:
+    else:
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
     return conn
@@ -218,13 +223,17 @@ class TimedRequestHandler(BaseRequestHandler):
         self.log('info', '"%s" %s %s [%sms]', self.requestline, code, size, duration)
 
 def main():
-    global GROUP_ID
+    global GROUP_ID, PROD
+
+
     parser = argparse.ArgumentParser(description='Opens a saved group')
     parser.add_argument('group_id', action="store")
     parser.add_argument('-p', '--production', action="store_true")
     args = parser.parse_args()
     GROUP_ID = args.group_id
-    if args.production:
+    PROD = args.production
+    if PROD:
+        global apsw # Hack so that app can still run in debug mode without APSW
         try :
             import apsw
         except:
