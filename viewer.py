@@ -17,7 +17,7 @@ from werkzeug.serving import BaseRequestHandler
 
 app = Flask(__name__)
 
-MAX_LIMIT = 50
+MAX_LIMIT = 25
 # Will be set once when program starts
 GROUP_ID = None
 PROD = False
@@ -180,9 +180,15 @@ def search(where, conn, search_string, limit=25, offset=0):
 
 def sql_query(conn, sql, *args):
     cur = conn.cursor()
-    rows = cur.execute(sql, args).fetchall()
+    rows = cur.execute(sql, args)
     ret_rows = []
+    total = 0
     for row in rows:
+        total += 1
+        if total > MAX_LIMIT:
+            # Hard limit on maximum no. of rows that can be returned w/o paging
+            break
+
         d = OrderedDict()
         for key in row.keys():
             d[key] = row[key]
