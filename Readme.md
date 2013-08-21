@@ -64,7 +64,7 @@ To run tests:
 ```
 python test.py
 ```
-This will test all the archiving and syncing capabilities of `archiver.py`. These tests do not cover `viewer.py`.
+This will test all the archiving and syncing capabilities of `archiver.py`. These tests do not cover `viewer.py`. These tests are completely independent of Facebook's API, and do not require an internet connection to run.
 
 Updating Schema
 ---------------
