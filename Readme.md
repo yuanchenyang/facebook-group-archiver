@@ -3,7 +3,7 @@ Facebook Group Archiver
 
 Dependencies
 ------------
-This archiver needs the `facepy` and `iso8601` packages, while the viewer needs `flask`. To run a production server, we need `apsw`, an interface to `sqlite` that supports read-only access to the database.
+This archiver needs the `facepy` and `iso8601` packages, while the viewer needs `flask`. To optionally run a production server, we need `apsw`, an interface to `sqlite` that supports read-only access to the database.
 
 ```
 pip install facepy iso8601 flask
