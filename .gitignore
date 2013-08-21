@@ -20,3 +20,4 @@ run-cron
 /conf.sh
 /.coverage
 /htmlcov
+.ropeproject
