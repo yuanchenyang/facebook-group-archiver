@@ -1,6 +1,7 @@
 {% extends "result.html" %}
 
 {% block result_body %}
+{% if results %}
 {% for result in results %}
 <dl class="dl-horizontal result">
   {% for key, value in result.items() %}
@@ -9,4 +10,7 @@
   {% endfor %}
 </dl>
 {% endfor %}
+{% else %}
+<h2>No matches</h2>
+{% endif %}
 {% endblock %}

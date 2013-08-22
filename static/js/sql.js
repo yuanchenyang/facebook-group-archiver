@@ -12,7 +12,7 @@ var examples = {"Posts by most recent":
                 "SELECT count(*) AS Count, post.id, post.from_name, post.message "+
                 "FROM comment JOIN post ON post.id=post_id GROUP BY post_id "+
                 "ORDER BY COUNT DESC",
-                "Full-text serch":
+                "Full-text search":
                 'SELECT * FROM post_fts WHERE post_fts MATCH "random"',
                 "Total comments by month":
                 'SELECT count(*), STRFTIME("%Y-%m", SUBSTR(created_time, 1, 19)) '+

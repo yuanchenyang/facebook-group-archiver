@@ -1,6 +1,7 @@
 {% extends "result.html" %}
 
 {% block result_body %}
+{% if results %}
 <h2>Searching {{ where }}s</h2>
 {% for result in results %}
 <div class="row result">
@@ -17,4 +18,7 @@
   {{ result["snippet"] | safe}}
 </div>
 {% endfor %}
+{% else %}
+<h2>No {{where}}s found</h2>
+{% endif %}
 {% endblock %}
