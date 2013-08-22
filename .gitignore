@@ -21,3 +21,5 @@ run-cron
 /.coverage
 /htmlcov
 .ropeproject
+
+*-server.sh
