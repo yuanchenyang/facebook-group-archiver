@@ -6,7 +6,15 @@
 <dl class="dl-horizontal result">
   {% for key, value in result.items() %}
   <dt> {{ key }} </dt>
+  {% if key in ["id", "post_id", "from_id"] %}
+  <dd>
+    <a href="https://www.facebook.com/{{ value }}" target="_blank">
+      {{ value }}
+    </a>
+  </dd>
+  {% else %}
   <dd> {{ value }} </dd>
+  {% endif %}
   {% endfor %}
 </dl>
 {% endfor %}

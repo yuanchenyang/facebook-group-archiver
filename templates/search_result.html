@@ -12,7 +12,9 @@
 </div>
 <div class="row">
   {% set id = result["id"] %}
-  <a href="https://www.facebook.com/{{ id }}"> Facebook Link</a>
+  <a href="https://www.facebook.com/{{ id }}" target="_blank">
+    Facebook Link
+  </a>
 </div>
 <div class="row">
   {{ result["snippet"] | safe}}
