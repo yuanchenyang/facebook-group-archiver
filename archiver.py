@@ -139,6 +139,9 @@ def get_comments(conn, graph, post_id):
             comment_id = if_present('id')(comment)
             if not exists(conn, comment_id, "comment"):
                 comment['post_id'] = post_id
+                if if_present('message')(comment) is None:
+                    # Some comments may not have a message
+                    comment['message'] = ""
                 insert_comment(comment, conn)
                 comments += 1
     return comments
