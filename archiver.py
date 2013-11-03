@@ -139,9 +139,10 @@ def get_comments(conn, graph, post_id):
             comment_id = if_present('id')(comment)
             if not exists(conn, comment_id, "comment"):
                 comment['post_id'] = post_id
-                if if_present('message')(comment) is None:
-                    # Some comments may not have a message
-                    comment['message'] = ""
+                if not if_present('message')(comment):
+                    # Some comments may not have a message, we still need to
+                    # insert something into the database:
+                    comment['message'] = " "
                 insert_comment(comment, conn)
                 comments += 1
     return comments

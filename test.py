@@ -324,6 +324,13 @@ class ArchiverTest(BaseTest):
         self.ggp(update_posts=True)
         self.check_graph()
 
+    def test_insert_comment_without_message(self):
+        self.ggp()
+        self.graph.add_comment(self.p2.id, "", 5)
+        self.ggp()
+        # If no message, insert a single space in place of it
+        self.graph.posts[self.p2.id].comments[-1].message = " "
+        self.check_graph()
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=False, buffer=False)
