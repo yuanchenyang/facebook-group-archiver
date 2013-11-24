@@ -178,14 +178,14 @@ def search(where, conn, search_string, limit=25, offset=0):
                  ",".join(select_fields), where)
     return sql_query(conn, sql, search_string, limit, offset)
 
-def sql_query(conn, sql, *args):
+def sql_query(conn, sql, *args, rate_limit=True):
     cur = conn.cursor()
     rows = cur.execute(sql, args)
     ret_rows = []
     total = 0
     for row in rows:
         total += 1
-        if total > MAX_LIMIT:
+        if rate_limit and total > MAX_LIMIT:
             # Hard limit on maximum no. of rows that can be returned w/o paging
             break
 
@@ -209,7 +209,7 @@ def cached_sql_query(conn, sql, *args):
     if query in query_cache:
         return query_cache[query]
     else:
-        result = sql_query(conn, sql, *args)
+        result = sql_query(conn, sql, *args, rate_limit=False)
         query_cache[query] = result
         return result
 
