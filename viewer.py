@@ -178,11 +178,12 @@ def search(where, conn, search_string, limit=25, offset=0):
                  ",".join(select_fields), where)
     return sql_query(conn, sql, search_string, limit, offset)
 
-def sql_query(conn, sql, *args, rate_limit=True):
+def sql_query(conn, sql, *args, **kwargs):
     cur = conn.cursor()
     rows = cur.execute(sql, args)
     ret_rows = []
     total = 0
+    rate_limit = kwargs.get('rate-limit', True)
     for row in rows:
         total += 1
         if rate_limit and total > MAX_LIMIT:
