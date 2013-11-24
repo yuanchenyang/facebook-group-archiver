@@ -183,7 +183,7 @@ def sql_query(conn, sql, *args, **kwargs):
     rows = cur.execute(sql, args)
     ret_rows = []
     total = 0
-    rate_limit = kwargs.get('rate-limit', True)
+    rate_limit = kwargs.get('rate_limit', True)
     for row in rows:
         total += 1
         if rate_limit and total > MAX_LIMIT:
