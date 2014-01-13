@@ -15,7 +15,7 @@ from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
 from werkzeug.serving import BaseRequestHandler
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
 
 MAX_LIMIT = 25
 # Will be set once when program starts
