@@ -21,6 +21,7 @@ MAX_LIMIT = 25
 # Will be set once when program starts
 GROUP_ID = None
 PROD = False
+DIR_ROOT = ""
 
 # Used for caching queries, may not be threadsafe
 # This probably isn't the right way to do it
@@ -93,7 +94,7 @@ def stats_page():
 @app.route("/schema")
 def schema_page():
     try:
-        f = open("bootstrap.sql")
+        f = open(DIR_ROOT + "bootstrap.sql")
         schema = f.read()
         f.close()
     except:
