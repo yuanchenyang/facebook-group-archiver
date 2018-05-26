@@ -7,7 +7,7 @@
   <div class="span2"></div>
   <div class="span8">
     <p></p>
-    {% set paragraphs = group["description"].lstrip().rstrip().split("\n\n") %}
+    {% set paragraphs = (group.get("description")|default("", True)).lstrip().rstrip().split("\n\n") %}
     {% if paragraphs.__len__() == 1 %}
       <p align="center"><small>{{ paragraphs[0] }}</small></p>
     {% else %}
