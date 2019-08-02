@@ -6,6 +6,8 @@ import os
 import datetime
 import iso8601
 
+from utils import get_db_name
+
 POST_LIMIT = 100
 COMMENT_LIMIT = 1000
 
@@ -30,9 +32,9 @@ def print_groups(graph):
     try:
         data = groups["groups"]["data"]
         for g in data:
-            print "name: " + g["name"]
-            print "id  : " + g["id"]
-            print
+            print("name: " + g["name"])
+            print("id  : " + g["id"])
+            print()
     except KeyError:
         raise ValueError("Invalid response: " + groups)
 
@@ -98,8 +100,8 @@ def update(conn, update_dict, obj_id, table_name):
     try:
         c.execute(query, vals + (obj_id,))
     except Exception as e:
-        print >>sys.stderr, "Error updating {} table id {}: {}"\
-                   .format(table_name, obj_id, e)
+        print("Error updating {} table id {}: {}".format(table_name, obj_id, e),
+              file=sys.stderr)
 
 def exists(conn, item_id, table_name):
     c = conn.cursor()
@@ -118,8 +120,9 @@ def insert_row(conn, table_name, key_val_map, update=False):
             table_name, ",".join(keys), ",".join(['?' for _ in keys])), vals)
         return True
     except Exception as e:
-        print >>sys.stderr, "Error inserting {} into table {}: {}"\
-                   .format(str(key_val_map), table_name, str(e))
+        print("Error inserting {} into table {}: {}"\
+              .format(str(key_val_map), table_name, str(e)),
+              file=sys.stderr)
         return False
 
 def get_comments(conn, graph, post_id):
@@ -146,9 +149,6 @@ def get_comments(conn, graph, post_id):
                 insert_comment(comment, conn)
                 comments += 1
     return comments
-
-def get_db_name(group_id):
-     return DATABASE_DIR + "/" + str(group_id) + ".db"
 
 def update_group_info(conn, graph, group_id):
     """Updates the fb_group table of the database"""
@@ -224,18 +224,18 @@ def get_group_posts(graph, group_id, update_posts=False):
                     comments += get_comments(conn, graph, post_id)
                     posts_new += 1
 
-            print "Getting posts, total {0}".format(posts_new + posts_updated)
+            print("Getting posts, total {0}".format(posts_new + posts_updated))
             conn.commit()
             newUrl = response["paging"]["next"].replace(
                 "https://graph.facebook.com/", "")
             response = graph.get(newUrl)
         return posts_new, comments, posts_updated
 
-    print "Inserted {} post(s), {} comment(s). Updated {} post(s)"\
-        .format(*get_posts())
+    print("Inserted {} post(s), {} comment(s). Updated {} post(s)"\
+        .format(*get_posts()))
     conn.commit()
     conn.close()
-    print "Saved in database: " + db_name
+    print("Saved in database: " + db_name)
 
 def main():
     parser = argparse.ArgumentParser(description='Downloads a facebook group')

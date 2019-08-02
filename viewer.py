@@ -9,7 +9,7 @@ try:
     import apsw
 except: pass
 
-import archiver
+from utils import get_db_name
 
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
@@ -152,7 +152,7 @@ def curry(fn, *args):
     return lambda *more_args: fn(*(args + more_args))
 
 def get_conn(group_id):
-    db_path = archiver.get_db_name(group_id)
+    db_path = get_db_name(group_id)
     try:
         with open(db_path): pass
     except IOError:
@@ -199,7 +199,7 @@ def sql_query(conn, sql, *args, **kwargs):
 
 def cached_sql_query(conn, sql, *args):
     global db_modified_time, query_cache
-    last_mod_time = os.path.getmtime(archiver.get_db_name(GROUP_ID))
+    last_mod_time = os.path.getmtime(get_db_name(GROUP_ID))
 
     if db_modified_time is None or last_mod_time > db_modified_time:
         # Flush cache
@@ -233,7 +233,6 @@ class TimedRequestHandler(BaseRequestHandler):
 def main():
     global GROUP_ID, PROD
 
-
     parser = argparse.ArgumentParser(description='Opens a saved group')
     parser.add_argument('group_id', action="store")
     parser.add_argument('-p', '--production', action="store_true")
@@ -249,7 +248,7 @@ def main():
                               "during production mode")
         app.run(host="0.0.0.0", port=80, request_handler=TimedRequestHandler)
     else:
-        print "Running in debug mode, full write access to database"
+        print("Running in debug mode, full write access to database")
         app.run(debug=True, request_handler=TimedRequestHandler)
 
 if __name__ == '__main__':
