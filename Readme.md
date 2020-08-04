@@ -1,6 +1,8 @@
 Facebook Group Archiver
 =======================
 
+Note: the archiver doesn't work anymore due to Facebook API changes. Currently this tool is only useful for browsing previously archived groups using `viewer.py`.
+
 Dependencies
 ------------
 This archiver needs the `facepy` and `iso8601` packages, while the viewer needs `flask`. To optionally run a production server, we need `apsw`, an interface to `sqlite` that supports read-only access to the database.
