@@ -5,10 +5,6 @@ import time
 import sys
 import os
 
-try:
-    import apsw
-except: pass
-
 from utils import get_db_name
 
 from collections import OrderedDict
@@ -159,14 +155,10 @@ def get_conn(group_id):
         raise NameError("Database not found: " + db_path)
 
     if PROD:
-        def row_trace(cursor, row):
-            names = (l[0] for l in cursor.getdescription())
-            return dict(zip(names, row))
-        conn = apsw.Connection(db_path, flags=1) # SQLITE Read-Only flag
-        conn.setrowtrace(row_trace)
+        conn = sqlite3.connect('file:{}?mode=ro'.format(db_path), uri=True)
     else:
         conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+    conn.row_factory = sqlite3.Row
     return conn
 
 def search(where, conn, search_string, limit=25, offset=0):
@@ -240,12 +232,6 @@ def main():
     GROUP_ID = args.group_id
     PROD = args.production
     if PROD:
-        global apsw # Hack so that app can still run in debug mode without APSW
-        try :
-            import apsw
-        except:
-            raise ViewerError("Viewer must use apsw for database connections " +
-                              "during production mode")
         app.run(host="0.0.0.0", port=80, request_handler=TimedRequestHandler)
     else:
         print("Running in debug mode, full write access to database")
