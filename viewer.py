@@ -9,7 +9,7 @@ from utils import get_db_name
 
 from collections import OrderedDict
 from flask import Flask, request, render_template, flash, url_for, redirect
-from werkzeug.serving import BaseRequestHandler
+from werkzeug.serving import WSGIRequestHandler
 
 app = Flask(__name__)
 
@@ -207,7 +207,7 @@ def cached_sql_query(conn, sql, *args):
         query_cache[query] = result
         return result
 
-class TimedRequestHandler(BaseRequestHandler):
+class TimedRequestHandler(WSGIRequestHandler):
     """Extend werkzeug request handler to suit our needs."""
     def handle(self):
         self.started = time.time()
