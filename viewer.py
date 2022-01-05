@@ -90,7 +90,7 @@ def stats_page():
 @app.route("/schema")
 def schema_page():
     try:
-        f = open(DIR_ROOT + "bootstrap.sql")
+        f = open(os.path.join(DIR_ROOT, "bootstrap.sql"))
         schema = f.read()
         f.close()
     except:
